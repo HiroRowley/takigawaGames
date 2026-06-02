@@ -1,3 +1,5 @@
+import Phaser from "phaser";
+
 export default class GameScene extends Phaser.Scene {
     constructor() {
         super("GameScene"); // このSceneの識別名（TitleSceneから遷移してくる先）
@@ -22,4 +24,8 @@ export default class GameScene extends Phaser.Scene {
             this.scene.start("ResultScene");
         });
     }
+
+    // startGame(){
+
+    // }
 }
