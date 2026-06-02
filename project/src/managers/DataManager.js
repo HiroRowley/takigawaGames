@@ -1,3 +1,4 @@
+import Phaser from "phaser";
 import System from "../system/System.js";
 
 /**
@@ -19,20 +20,22 @@ class DataManager {
     // ■ プレイヤー状態
     // =====================================================
 
-    // HP（2想定：I Wanna系）
     this.hp = System.CONFIG.PLAYER.MAX_HP;
 
     // 有給（ゲーム内リソース）
-    this.paidHolidays = System.CONFIG.PLAYER.PAID_HOLIDAYS ?? 0;
+    if (System.CONFIG.PLAYER.PAID_HOLIDAYS === undefined) {
+      throw new Error(
+        "PAID_HOLIDAYS is not defined in System.CONFIG.PLAYER"
+      );
+    }
+
+    this.paidHolidays = System.CONFIG.PLAYER.PAID_HOLIDAYS;
 
     // =====================================================
     // ■ ステージ管理
     // =====================================================
 
-    // 現在のステージ
     this.currentStage = System.CONFIG.START_STAGE;
-
-    // リスポーン用ステージ（遅刻後の復帰位置）
     this.respawnStage = System.CONFIG.START_STAGE;
 
     // =====================================================
@@ -51,7 +54,6 @@ class DataManager {
   }
 
   setHP(value) {
-    // HPは0未満にならない（0 = 遅刻状態）
     this.hp = Math.max(0, value);
   }
 
@@ -77,8 +79,6 @@ class DataManager {
 
   setCurrentStage(value) {
     this.currentStage = value;
-
-    // 現在ステージをリスポーン基準として保存
     this.respawnStage = value;
   }
 
@@ -87,16 +87,13 @@ class DataManager {
   // =========================================================
 
   resetPlayerData() {
-    // HPを初期値へ戻す
     this.hp = System.CONFIG.PLAYER.MAX_HP;
 
-    // 有給も初期値へ戻す
-    this.paidHolidays = System.CONFIG.PLAYER.PAID_HOLIDAYS ?? 0;
+    // 有給も初期値へ戻す（null合体演算子なし）
+    this.paidHolidays = System.CONFIG.PLAYER.PAID_HOLIDAYS;
 
-    // ステージは最初ではなく「直前ステージ」に戻す
     this.currentStage = this.respawnStage;
 
-    // 遅刻回数を加算
     this.lateCount++;
   }
 
@@ -110,7 +107,7 @@ class DataManager {
 }
 
 // =========================================================
-// ■ シングルトン（ゲーム全体共有）
+// ■ シングルトン
 // =========================================================
 
 const instance = new DataManager();
