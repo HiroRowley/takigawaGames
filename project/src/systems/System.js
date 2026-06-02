@@ -6,9 +6,6 @@ import Phaser from "phaser";
  * ■ 役割
  * - ゲーム全体設定の定数管理
  * - Phaser起動設定の基準値
- *
- * ■ 注意
- * - 実際の初期化（Scene登録・physics適用）は main.js 側
  */
 
 const System = {
@@ -18,20 +15,18 @@ const System = {
     // =====================================================
 
     TYPE: Phaser.AUTO,
-
     WIDTH: 1280,
     HEIGHT: 720,
 
     // =====================================================
-    // ■ Arcade Physics（設定値のみ）
+    // ■ Arcade Physics
     // =====================================================
 
     PHYSICS: {
       DEFAULT: "arcade",
-
       ARCADE: {
         GRAVITY_Y: 900,
-        DEBUG: true, // ← ここは表示用フラグ（Scene側で使用）
+        DEBUG: true,
       },
     },
 
@@ -41,9 +36,7 @@ const System = {
 
     PLAYER: {
       MAX_HP: 2,
-      SPEED: 180,
-      JUMP_POWER: 380,
-      PAID_HOLIDAYS: 0,
+      PAID_HOLIDAYS: 3,
     },
 
     // =====================================================
@@ -53,10 +46,14 @@ const System = {
     START_STAGE: 1,
 
     // =====================================================
-    // ■ デバッグ（論理用）
+    // ■ Scene定義
     // =====================================================
 
-    DEBUG: true,
+    SCENES: {
+      TITLE: "TitleScene",
+      GAME: "GameScene",
+      RESULT: "ResultScene",
+    },
   },
 };
 
