@@ -18,14 +18,6 @@ export default class GameScene extends Phaser.Scene {
             this.scene.start("ResultScene");
         });
 
-        //キー入力受付ローリー
-        this.cursors = this.input.keyboard.createCursorKeys();
-
-        //プレイヤーの生成ローリー
-        this.player = new Player(this, 100, 450);
     }
-    update() {
-        //プレイヤーの更新ローリー
-        this.player.update(this.cursors);
-    }
+    
 }
