@@ -25,7 +25,7 @@ const System = {
     PHYSICS: {
       DEFAULT: "arcade",
       ARCADE: {
-        GRAVITY_Y: 900,
+        gravity: { y: 900 },
         DEBUG: true,
       },
     },
