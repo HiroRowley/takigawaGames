@@ -4,6 +4,7 @@ export default class TitleScene extends Phaser.Scene {
     }
 
     create() {
+        // タイトル表示
         this.add.text(250, 250, "滝川さんの大出勤", {
             fontSize: "32px",
             fill: "#ffffff"
@@ -14,8 +15,14 @@ export default class TitleScene extends Phaser.Scene {
             fill: "#aaaaaa"
         });
 
+        // 入力監視だけここでやる
         this.input.keyboard.on("keydown-ENTER", () => {
-            this.scene.start("GameScene");
+            this.startGame();
         });
+    }
+
+    startGame() {
+        // Scene遷移だけを担当
+        this.scene.start("GameScene");
     }
 }
