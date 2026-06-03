@@ -1,9 +1,9 @@
 import Phaser from "phaser";
-import System from "./System.js";
+import System from "./systems/System.js";
 
 import TitleScene from "./scenes/TitleScene.js";
 import GameScene from "./scenes/GameScene.js";
-// import ResultScene from "./scenes/ResultScene.js"; // ResultScene作成後にコメントアウトを解除
+import ResultScene from "./scenes/ResultScene.js"; 
 
 const config = {
   type: System.CONFIG.TYPE, // System.jsから定数を読み込むように修正
@@ -11,8 +11,8 @@ const config = {
   width: System.CONFIG.WIDTH,
   height: System.CONFIG.HEIGHT,
 
-  // ResultSceneを作成したら、配列に追加してください
-  scene: [TitleScene, GameScene], 
+
+  scene: [TitleScene, GameScene,ResultScene], 
 
   physics: {
     default: System.CONFIG.PHYSICS.DEFAULT,

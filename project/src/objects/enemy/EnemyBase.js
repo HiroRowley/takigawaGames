@@ -22,18 +22,13 @@ export default class EnemyBase extends Phaser.Physics.Arcade.Sprite {
 
     update() {
 
-        
+
         //画面外に出たら消す。
-        if(this.x < -100){
-            this.destroy();
-        }
-        if(this.x > 900){
-            this.destroy();
-        }
-        if(this.y > 700){
-            this.destroy();
-        }
-        if(this.y < -100){
+        if(this.x < -100 ||
+           this.x > 900 ||
+           this.y < -100 ||
+           this.y > 700) {
+
             this.destroy();
         }
 

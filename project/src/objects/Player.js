@@ -5,15 +5,15 @@ import DataManager from "../manager/DataManager.js";
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
 
-    constructor(GameScene, x, y,texture) {/**
+    constructor(scene, x, y,) {/**
         親クラスのコンストラクタを呼び出す。
         Phaser.Physics.Arcade.Spriteは、ゲームシーン、x座標、y座標、スプライトのキーを引数に取る。
-        x,yはプレイヤーの初期位置、textureはプレイヤーのスプライト画像を指定するための引数である。
+        x,yはプレイヤーの初期位置、playerはプレイヤーのスプライト画像を指定するための引数である。
         */
-        super(GameScene, x, y, texture);
+        super(scene, x, y, 'player');
 
-        GameScene.add.existing(this);
-        GameScene.physics.add.existing(this);
+        scene.add.existing(this);
+        scene.physics.add.existing(this);
 
         this.moveSpeed = 200;
         this.jumpPower = 400;
@@ -75,10 +75,16 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
      * ほかのオブジェクトから呼び出されることを想定している。
      */
     takeDamage(amount) {
+        if(this.isInvincible) {
+            return;//無敵状態ならダメージを受けない
+        }
 
         const currentHP = DataManager.getHP();
 
         const newHP = currentHP - amount;
+
+        this.isInvincible = true;//ダメージを受けたら無敵状態にする
+        this.scene.time.delayedCall(1000, () => { this.isInvincible = false; });//1秒後に無敵状態を解除する
 
         DataManager.setHP(newHP);
 
