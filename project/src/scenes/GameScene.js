@@ -96,4 +96,5 @@ export default class GameScene extends Phaser.Scene {
         this.scene.restart({ stage: DataManager.stageNumber });
         */
     }
+    
 }
