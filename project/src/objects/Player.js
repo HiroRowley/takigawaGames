@@ -5,11 +5,12 @@ import DataManager from "../manager/DataManager.js";
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
 
-    constructor(GameScene, x, y) {/**
+    constructor(GameScene, x, y,texture) {/**
         親クラスのコンストラクタを呼び出す。
         Phaser.Physics.Arcade.Spriteは、ゲームシーン、x座標、y座標、スプライトのキーを引数に取る。
+        x,yはプレイヤーの初期位置、textureはプレイヤーのスプライト画像を指定するための引数である。
         */
-        super(GameScene, x, y, "player");
+        super(GameScene, x, y, texture);
 
         GameScene.add.existing(this);
         GameScene.physics.add.existing(this);
@@ -60,6 +61,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
         }
 
+        if (this.y > 600) {//画面下に落ちた場合は遅刻とする
+            this.emit("late");//プレイヤーが遅刻したことを通知するイベントを発火させるGameSceneへ通知
+        }
+        if (this.y < -100) {//画面上に出た場合は遅刻とする
+            this.emit("late");//プレイヤーが遅刻したことを通知するイベントを発火させるGameSceneへ通知
+        }
+
     }
 
     /**
@@ -73,8 +81,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         const newHP = currentHP - amount;
 
         DataManager.setHP(newHP);
-
-        console.log(`HP : ${newHP}`);
 
         if (newHP <= 0) {
 
