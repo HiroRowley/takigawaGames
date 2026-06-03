@@ -40,10 +40,10 @@ export default class GameScene extends Phaser.Scene {
         });
 
         // =========================
-        // 本来のゲーム設計（未使用・コメントアウト）
+        // ゲーム設計
         // =========================
 
-        /*
+        
         // Stageデータ読み込み
         this.loadStageData();
 
@@ -57,7 +57,7 @@ export default class GameScene extends Phaser.Scene {
 
         // プレイヤー死亡監視
         this.setupPlayerDeathListener();
-        */
+        
     }
 
     update() {
