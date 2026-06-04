@@ -2,6 +2,8 @@ import Phaser from "phaser";
 
 import DataManager from "../managers/DataManager.js";
 import StageData from "../stages/Stage1.js";
+import StageData from "../stages/Stage2.js";
+import StageData from "../stages/Stage3.js";
 
 import Player from "../objects/Player.js";
 import Enemy from "../objects/enemy/Enemy.js";
@@ -33,7 +35,6 @@ export default class GameScene extends Phaser.Scene {
     // =========================
     create() {
 
-        this.deathCount=0;//初期化
         this.add.text(250, 250, "GAME SCENE", {
             fontSize: "32px",
             fill: "#ffffff"
@@ -52,6 +53,8 @@ export default class GameScene extends Phaser.Scene {
         this.createStage();
 
         //追加
+        this.setupPlayerDeathListener();
+
         this.createPlayer();
         this.createEnemies();
         this.createTraps();
@@ -63,10 +66,6 @@ export default class GameScene extends Phaser.Scene {
     // =========================
     createStage() {
         this.loadStageData();
-
-        this.createGround();
-        
-        this.setupPlayerDeathListener();//遅刻イベントの監視
     }
 
     // =========================
@@ -163,25 +162,13 @@ export default class GameScene extends Phaser.Scene {
             this.gameOver();
         });
     }
+ 
 
     // =========================
     // ダメージ処理（衝突時）
     // =========================
     handlePlayerDamage(player, damageSource) {
 
-        if (!damageSource) return;
-
-        if (damageSource.type === 'enemy') {
-            console.log('敵からダメージ');
-            player.takeDamage(1);
-        }
-
-        else if (damageSource.type === 'trap') {
-            console.log('トラップダメージ');
-            player.takeDamage(1);
-        }
-
-        console.log('ダメージ処理実行');
     }
 
     // =========================
