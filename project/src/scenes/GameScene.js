@@ -32,6 +32,8 @@ export default class GameScene extends Phaser.Scene {
     // create
     // =========================
     create() {
+
+        this.deathCount=0;//初期化
         this.add.text(250, 250, "GAME SCENE", {
             fontSize: "32px",
             fill: "#ffffff"
@@ -55,6 +57,8 @@ export default class GameScene extends Phaser.Scene {
     // =========================
     createStage() {
         this.loadStageData();
+
+        this.createGround();
 
         this.createPlayer();
         this.createEnemies();
@@ -95,29 +99,33 @@ export default class GameScene extends Phaser.Scene {
     // Enemy生成
     // =========================
     createEnemies() {
-        this.enemies = [];
+    this.enemies = this.physics.add.group();
 
-        this.enemySpawnList.forEach(pos => {
-            const enemy = new Enemy(this, pos.x, pos.y, "enemy");
-            this.add.existing(enemy);
-            this.physics.add.existing(enemy);
-            this.enemies.push(enemy);
-        });
-    }
+    this.enemySpawnList.forEach(pos => {//ステージデータにある敵の位置を順番に処理
+        const enemy = new Enemy(this, pos.x, pos.y, "enemy");//敵を生成
+
+        this.enemies.add(enemy);//グループに追加
+    });
+}
 
     // =========================
     // Trap生成
     // =========================
     createTraps() {
-        this.traps = [];
 
-        this.trapList.forEach(pos => {
-            const trap = new Trap(this, pos.x, pos.y, "trap");
-            this.add.existing(trap);
-            this.physics.add.existing(trap);
-            this.traps.push(trap);
-        });
-    }
+    // トラップ用のGroupを作る（物理付き）
+    this.traps = this.physics.add.group();
+
+    // ステージデータの配置情報を元に生成
+    this.trapList.forEach(pos => {
+
+        // トラップを生成
+        const trap = new Trap(this, pos.x, pos.y, "trap");
+
+        // グループに追加（Phaserが管理してくれる）
+        this.traps.add(trap);
+    });
+}
 
     // =========================
     // 衝突判定
@@ -159,24 +167,83 @@ export default class GameScene extends Phaser.Scene {
     // ダメージ処理
     // =========================
     handlePlayerDamage(player, damageSource) {
-        const damage = damageSource.getDamage();
-        player.takeDamage(damage);
+
+    // すでに無敵状態ならダメージを無効化
+    // （連続でダメージを受けるのを防ぐ）
+    if (this.player.isInvincible) return;
+
+    // ダメージ元（敵やトラップ）からダメージ量を取得
+    const damage = damageSource.getDamage();
+
+    // プレイヤーにダメージを与える
+    // （Playerクラス側のHPを減らす処理）
+    player.takeDamage(damage);
+
+    // 無敵状態にする（一定時間ダメージ無効）
+    this.player.isInvincible = true;
+
+    // ダメージ演出（プレイヤーを赤くする）
+    player.setTint(0xff0000);
+
+    // 1秒後に無敵解除＆見た目を元に戻す
+    this.time.delayedCall(1000, () => {
+        player.clearTint();              // 色を元に戻す
+        this.player.isInvincible = false; // 無敵解除
+    });
+
+    // HPが0以下になったらゲームオーバー
+    if (player.hp <= 0) {
+        this.gameOver();
     }
+}
 
     // =========================
     // ゲームオーバー
     // =========================
     gameOver() {
-        this.scene.start("ResultScene");
-    }
+    // 遅刻回数カウント
+    this.deathCount++;
+
+    // 物理停止（全部止める）
+    this.physics.pause();
+
+    // プレイヤー演出（今のところ赤くなる、後から変更可能）
+    this.player.setTint(0xff0000);
+
+    // 少し待ってからリスタート
+    this.time.delayedCall(1000, () => {
+
+        // 物理再開
+        this.physics.resume();
+
+        // プレイヤー初期化（ステージ開始位置に戻す）
+        this.player.setPosition(
+            this.playerSpawn.x,
+            this.playerSpawn.y
+        );
+
+        // 状態リセット
+        this.player.hp = 3;
+        this.player.clearTint();
+        this.player.isInvincible = false;
+
+        // ⚠ ステージはそのまま（敵・トラップはリセットしない）
+    });
+}
 
     // =========================
     // update
     // =========================
     update() {
-        if (this.player?.update) {
-            this.player.update(this.input.keyboard.createCursorKeys());
-        }
-    }
+    this.player.update(this.input.keyboard.createCursorKeys());//キーボード入力を渡す
+
+    this.enemies.children.iterate(enemy => {//敵の更新
+        enemy.update?.();
+    });
+
+    this.traps.children.iterate(trap => {//トラップの更新
+        trap.update?.();
+    });
+}
     
 }
