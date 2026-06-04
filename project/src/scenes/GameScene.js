@@ -1,27 +1,40 @@
 import Phaser from "phaser";
 
+import DataManager from "../managers/DataManager.js";
+import StageData from "../stages/Stage1.js";
+import StageData from "../stages/Stage2.js";
+import StageData from "../stages/Stage3.js";
+
+import Player from "../objects/Player.js";
+import Enemy from "../objects/enemy/Enemy.js";
+import Trap from "../objects/traps/Trap.js";
+
 export default class GameScene extends Phaser.Scene {
     constructor() {
         super("GameScene");
     }
 
-    // 前シーンからデータ受け取り（今回は未使用）
+    // =========================
+    // 初期データ受け取り
+    // =========================
     init(data) {
-        // this.stageNumber = data?.stageNumber;
-        // console.log("受け取ったステージ:", this.stageNumber);
+        this.stageNumber = data?.stageNumber || 1;
     }
 
-    // アセット読み込み（今回は未使用）
+    // =========================
+    // preload（アセット）
+    // =========================
     preload() {
-        // this.load.image("player", "assets/player.png");
-        // this.load.image("enemy", "assets/enemy.png");
-        // this.load.image("trap", "assets/trap.png");
+        this.load.image("player", "assets/player.png");
+        this.load.image("enemy", "assets/enemy.png");
+        this.load.image("trap", "assets/trap.png");
     }
 
+    // =========================
+    // create
+    // =========================
     create() {
-        // =========================
-        // 仮UI（遷移確認用）
-        // =========================
+
         this.add.text(250, 250, "GAME SCENE", {
             fontSize: "32px",
             fill: "#ffffff"
@@ -32,69 +45,186 @@ export default class GameScene extends Phaser.Scene {
             fill: "#aaaaaa"
         });
 
-        // =========================
-        // 遷移テスト（今回はこれが本体）
-        // =========================
         this.input.keyboard.on("keydown-SPACE", () => {
-            this.gameOver(); // ← 本来の設計ルートに合わせる
+            this.gameOver();
         });
 
-        // =========================
-        // 本来のゲーム設計（未使用・コメントアウト）
-        // =========================
+        // ===== ゲーム初期化 =====
+        this.createStage();
 
-        /*
-        // Stageデータ読み込み
-        this.loadStageData();
+        //追加
+        this.setupPlayerDeathListener();
 
-        // Player / Enemy / Trap生成
         this.createPlayer();
         this.createEnemies();
         this.createTraps();
-
-        // 衝突判定
         this.setupCollisions();
-
-        // プレイヤー死亡監視
-        this.setupPlayerDeathListener();
-        */
-    }
-
-    update() {
-        // =========================
-        // 毎フレーム処理（未使用）
-        // =========================
-        /*
-        this.handlePlayerInput();
-        this.checkGoal();
-        */
     }
 
     // =========================
-    // ダメージ処理（未使用）
+    // ステージ生成
+    // =========================
+    createStage() {
+        this.loadStageData();
+    }
+
+    // =========================
+    // ステージ読み込み
+    // =========================
+    loadStageData() {
+        this.stageData = StageData;//ステージのデータを持ってくる
+
+        this.playerSpawn = this.stageData.playerSpawn;//プレイヤーの初期位置
+        this.enemySpawnList = this.stageData.enemySpawnList;//敵をどこに出すか一覧
+        this.trapList = this.stageData.trapList;//トラップ配置データ
+        this.goalPosition = this.stageData.goalPosition;//ゴールの位置
+    }
+
+    // =========================
+    // Player生成
+    // =========================
+    createPlayer() {
+        this.player = new Player(
+            this,
+            this.playerSpawn.x,
+            this.playerSpawn.y,
+            "player"
+        );
+
+        this.add.existing(this.player);
+        this.physics.add.existing(this.player);
+    }
+
+    // =========================
+    // Enemy生成
+    // =========================
+    createEnemies() {
+    this.enemies = this.physics.add.group();
+
+    this.enemySpawnList.forEach(pos => {//ステージデータにある敵の位置を順番に処理
+        const enemy = new Enemy(this, pos.x, pos.y, "enemy");//敵を生成
+
+        this.enemies.add(enemy);//グループに追加
+    });
+}
+
+    // =========================
+    // Trap生成
+    // =========================
+    createTraps() {
+
+    // トラップ用のGroupを作る（物理付き）
+    this.traps = this.physics.add.group();
+
+    // ステージデータの配置情報を元に生成
+    this.trapList.forEach(pos => {
+
+        // トラップを生成
+        const trap = new Trap(this, pos.x, pos.y, "trap");
+
+        // グループに追加（Phaserが管理してくれる）
+        this.traps.add(trap);
+    });
+}
+
+    // =========================
+    // 衝突判定
+    // =========================
+    setupCollisions() {
+
+    // プレイヤー vs 敵
+    this.physics.add.overlap(this.player, this.enemies, (player, enemy) => {
+        this.handlePlayerDamage(player, enemy);
+    });
+
+    // プレイヤー vs トラップ
+    this.physics.add.overlap(this.player, this.traps, (player, trap) => {
+        this.handlePlayerDamage(player, trap);
+    });
+
+    // 敵 vs トラップ
+    this.physics.add.overlap(this.enemies, this.traps, (enemy, trap) => {
+        this.handleEnemyDamage(enemy, trap);
+    });
+
+    // プレイヤー vs 地面
+    this.physics.add.collider(this.player, this.ground);
+
+    // 敵 vs 地面
+    this.physics.add.collider(this.enemies, this.ground);
+}
+
+    // =========================
+    // プレイヤー遅刻監視
+    // =========================
+    setupPlayerDeathListener() {
+        this.player.on("late", () => {
+            this.gameOver();
+        });
+    }
+ 
+
+    // =========================
+    // ダメージ処理（衝突時）
     // =========================
     handlePlayerDamage(player, damageSource) {
-        /*
-        const damage = damageSource.getDamage();
-        player.takeDamage(damage);
-        */
+
     }
 
     // =========================
-    // ゲームオーバー（遷移本体）
+    // ゲームオーバー
     // =========================
     gameOver() {
-        this.scene.start("ResultScene");
-    }
+    // 遅刻回数カウント
+    this.deathCount++;
+
+    // 物理停止（全部止める）
+    this.physics.pause();
+
+    // プレイヤー演出（今のところ赤くなる、後から変更可能）
+    this.player.setTint(0xff0000);
+
+    // 少し待ってからリスタート
+    this.time.delayedCall(1000, () => {
+
+        // 物理再開（必要なら後で戻る時用）
+        this.physics.resume();
+
+        // 状態リセット
+        this.player.hp = 2;
+        this.player.clearTint();
+        this.player.isInvincible = false;
+
+        // ⚠ ステージはそのまま（敵・トラップはリセットしない）
+
+        // ResultSceneへ移行
+        this.scene.start('ResultScene', {
+            deathCount: this.deathCount
+        });
+    });
+}
 
     // =========================
-    // 次ステージ（未使用）
+    // update
     // =========================
-    nextStage() {
-        /*
-        DataManager.stageNumber++;
-        this.scene.restart({ stage: DataManager.stageNumber });
-        */
+    update() {
+        // プレイヤー更新（内部で入力処理済み）
+        this.player.update();
+
+        // 敵の更新
+        this.enemies.children.iterate(enemy => {
+            enemy.update?.();
+        });
+
+        // トラップの更新
+        this.traps.children.iterate(trap => {
+            trap.update?.();
+        });
+
+        // HPが0以下になったらゲームオーバー
+        if (this.player.hp <= 0) {
+            this.gameOver();
+        }
     }
     
 }
