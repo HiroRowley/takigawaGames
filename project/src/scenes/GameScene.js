@@ -178,4 +178,5 @@ export default class GameScene extends Phaser.Scene {
             this.player.update(this.input.keyboard.createCursorKeys());
         }
     }
+    
 }
