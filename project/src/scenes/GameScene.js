@@ -50,6 +50,12 @@ export default class GameScene extends Phaser.Scene {
 
         // ===== ゲーム初期化 =====
         this.createStage();
+
+        //追加
+        this.createPlayer();
+        this.createEnemies();
+        this.createTraps();
+        this.setupCollisions();
     }
 
     // =========================
