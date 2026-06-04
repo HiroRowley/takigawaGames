@@ -65,12 +65,7 @@ export default class GameScene extends Phaser.Scene {
         this.loadStageData();
 
         this.createGround();
-
-        this.createPlayer();
-        this.createEnemies();
-        this.createTraps();
         
-        this.setupCollisions();//ぶつかったときのルール設定
         this.setupPlayerDeathListener();//遅刻イベントの監視
     }
 
@@ -170,38 +165,24 @@ export default class GameScene extends Phaser.Scene {
     }
 
     // =========================
-    // ダメージ処理
+    // ダメージ処理（衝突時）
     // =========================
     handlePlayerDamage(player, damageSource) {
 
-    // すでに無敵状態ならダメージを無効化
-    // （連続でダメージを受けるのを防ぐ）
-    if (this.player.isInvincible) return;
+        if (!damageSource) return;
 
-    // ダメージ元（敵やトラップ）からダメージ量を取得
-    const damage = damageSource.getDamage();
+        if (damageSource.type === 'enemy') {
+            console.log('敵からダメージ');
+            player.takeDamage(1);
+        }
 
-    // プレイヤーにダメージを与える
-    // （Playerクラス側のHPを減らす処理）
-    player.takeDamage(damage);
+        else if (damageSource.type === 'trap') {
+            console.log('トラップダメージ');
+            player.takeDamage(1);
+        }
 
-    // 無敵状態にする（一定時間ダメージ無効）
-    this.player.isInvincible = true;
-
-    // ダメージ演出（プレイヤーを赤くする）
-    player.setTint(0xff0000);
-
-    // 1秒後に無敵解除＆見た目を元に戻す
-    this.time.delayedCall(1000, () => {
-        player.clearTint();              // 色を元に戻す
-        this.player.isInvincible = false; // 無敵解除
-    });
-
-    // HPが0以下になったらゲームオーバー
-    if (player.hp <= 0) {
-        this.gameOver();
+        console.log('ダメージ処理実行');
     }
-}
 
     // =========================
     // ゲームオーバー
@@ -219,21 +200,20 @@ export default class GameScene extends Phaser.Scene {
     // 少し待ってからリスタート
     this.time.delayedCall(1000, () => {
 
-        // 物理再開
+        // 物理再開（必要なら後で戻る時用）
         this.physics.resume();
 
-        // プレイヤー初期化（ステージ開始位置に戻す）
-        this.player.setPosition(
-            this.playerSpawn.x,
-            this.playerSpawn.y
-        );
-
         // 状態リセット
-        this.player.hp = 3;
+        this.player.hp = 2;
         this.player.clearTint();
         this.player.isInvincible = false;
 
         // ⚠ ステージはそのまま（敵・トラップはリセットしない）
+
+        // ResultSceneへ移行
+        this.scene.start('ResultScene', {
+            deathCount: this.deathCount
+        });
     });
 }
 
@@ -241,15 +221,23 @@ export default class GameScene extends Phaser.Scene {
     // update
     // =========================
     update() {
-    this.player.update(this.input.keyboard.createCursorKeys());//キーボード入力を渡す
+        // プレイヤー更新（内部で入力処理済み）
+        this.player.update();
 
-    this.enemies.children.iterate(enemy => {//敵の更新
-        enemy.update?.();
-    });
+        // 敵の更新
+        this.enemies.children.iterate(enemy => {
+            enemy.update?.();
+        });
 
-    this.traps.children.iterate(trap => {//トラップの更新
-        trap.update?.();
-    });
-}
+        // トラップの更新
+        this.traps.children.iterate(trap => {
+            trap.update?.();
+        });
+
+        // HPが0以下になったらゲームオーバー
+        if (this.player.hp <= 0) {
+            this.gameOver();
+        }
+    }
     
 }
