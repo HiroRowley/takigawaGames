@@ -12,13 +12,13 @@ export default class TitleScene extends Phaser.Scene {
     create() {
 
         // タイトル
-        this.add.text(220, 220, "LATE COMPANY", {
+        this.add.text(220, 220, "滝川さんの大出勤", {
             fontSize: "48px",
             fill: "#ffffff"
         });
 
         // 説明
-        this.add.text(240, 320, "Press ENTER", {
+        this.add.text(240, 320, "Press ENTER to start", {
             fontSize: "24px",
             fill: "#aaaaaa"
         });

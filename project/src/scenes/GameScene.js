@@ -3,6 +3,8 @@ import DataManager from "../managers/DataManager.js";
 
 // ステージデータのインポート
 import Stage1 from "../stages/Stage1.js";
+import Stage2 from "../stages/Stage2.js";
+import Stage3 from "../stages/Stage3.js";
 
 import Player from "../objects/Player.js";
 import Enemy from "../objects/enemy/EnemyBase.js";
@@ -19,8 +21,7 @@ export default class GameScene extends Phaser.Scene {
     // init
     // =====================================
     init(data) {
-        // デモ用に強制的にステージ1に固定
-        this.stageNumber = 1;
+        this.stageNumber = data.stageNumber || 1;
     }
 
     // =====================================
@@ -28,7 +29,9 @@ export default class GameScene extends Phaser.Scene {
     // =====================================
     preload() {
         this.imageLoader();
+        this.soundLoader();
     }
+    
 
     imageLoader(){
         // 全ステージで使う画像をロード
@@ -36,6 +39,10 @@ export default class GameScene extends Phaser.Scene {
         this.load.image("noda", "asset/noda/noda.png");
         // ※ もしground画像を用意した場合は、ここでロードしてください。
         // 例: this.load.image("ground", "asset/ground.png");
+    }
+    soundLoader(){
+        // サウンドのロードはここで行います。
+        // 例: this.load.audio("jump", "asset/sounds/jump.wav");
     }
 
     // =====================================
@@ -69,18 +76,23 @@ export default class GameScene extends Phaser.Scene {
     // ステージ読込とデータ整形
     // =====================================
     loadStageData() {
-        const stages = {
-            1: Stage1
-        };
-
-        this.stageData = stages[this.stageNumber];
-
-        if (!this.stageData) {
-            console.error(`ステージ ${this.stageNumber} のデータが見つかりません。`);
-            return;
+        switch (this.stageNumber) {
+            case 1:
+                this.stageData = Stage1;
+                break;
+            case 2:
+                this.stageData = Stage2;
+                break;
+            case 3:
+                this.stageData = Stage3;
+                break;
+            default:
+                console.error(`ステージ ${this.stageNumber} のデータが見つかりません。`);
+                return;
         }
 
-        this.TILE = this.stageData.TILE;
+        // タイルサイズの取得（ステージデータにTILEプロパティがない場合は64をデフォルトとする）
+        this.TILE = this.stageData.TILE || 64;
 
         // データが存在しないプロパティは空配列 [] で初期化
         this.groundList = this.stageData.groundList || [];
@@ -93,7 +105,7 @@ export default class GameScene extends Phaser.Scene {
     }
 
     // =====================================
-    // 座標変換ヘルパー関数
+    // 座標変換ヘルパー関数 タイル座標 → ピクセル座標変換
     // =====================================
     getPixelX(x) {
         return this.TILE ? (x * this.TILE + this.TILE / 2) : x;
@@ -104,15 +116,30 @@ export default class GameScene extends Phaser.Scene {
     }
 
     // =====================================
-    // 地形生成（バグ修正版）
+    // 地形生成
     // =====================================
     createGround() {
         this.groundList.forEach(pos => {
             const px = this.getPixelX(pos.x);
             const py = this.getPixelY(pos.y);
             
-            // 画像アセットがない場合でも動くように、茶色の四角(Rectangle)を生成してグループに追加
-            const ground = this.add.rectangle(px, py, this.TILE, this.TILE, 0x654321); 
+            let ground;
+
+            if(this.stageNumber === 1 || this.stageNumber === 2) {
+                // 画像アセットがある場合は、スプライトを生成してグループに追加
+                const hasGroundAbove = this.groundList.some(otherPos => {
+                    return otherPos.x === pos.x && otherPos.y === pos.y - 1;
+                });
+                if (hasGroundAbove) {
+                    ground = this.add.sprite(px, py, "dirt");
+                } else {
+                    ground = this.add.sprite(px, py, "grass");
+                }
+                ground.setOrigin(0.5, 0.5); // タイルの中心を基準にする
+                } else {
+                // 画像アセットがない場合は、茶色の四角(Rectangle)を生成してグループに追加
+                    ground = this.add.rectangle(px, py, this.TILE, this.TILE, 0x654321); 
+                }
             
             // 静的グループに登録して物理化する
             this.grounds.add(ground);
@@ -264,7 +291,7 @@ export default class GameScene extends Phaser.Scene {
         }
 
         DataManager.setCurrentStage(nextStage);
-        this.scene.start("GameScene", { stage: nextStage });
+        this.scene.start("GameScene", { stageNumber: nextStage });
     }
 
     // =====================================
