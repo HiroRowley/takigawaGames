@@ -1,57 +1,89 @@
+
 // objects/Player.js
 
 import Phaser from "phaser";
-import DataManager from "../manager/DataManager.js";
+import DataManager from "../managers/DataManager.js";
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
 
-    constructor(scene, x, y,) {/**
-        親クラスのコンストラクタを呼び出す。
-        Phaser.Physics.Arcade.Spriteは、ゲームシーン、x座標、y座標、スプライトのキーを引数に取る。
-        x,yはプレイヤーの初期位置、playerはプレイヤーのスプライト画像を指定するための引数である。
-        */
-        super(scene, x, y, 'player');
+    constructor(scene, x, y) {
+        /**
+         * 親クラスのコンストラクタ
+         */
+        super(scene, x, y, "player");
 
+        // Sceneへ登録
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
+        // =========================
+        // プレイヤー設定
+        // =========================
+
         this.moveSpeed = 200;
         this.jumpPower = 400;
-        //this.setDragX(600); ←停止時の地面での摩擦を追加する場合は有効にする
+
+        // 状態管理
+        this.isLate = false;
+        this.isInvincible = false;
+        this.canMove = true;
+        this.setScale(0.1);
+
+        // 摩擦（必要なら有効化）
+        // this.setDragX(600);
     }
 
-    /**
-     * プレイヤー操作
-     */
+    // =========================
+    // update
+    // =========================
     update(cursors) {
 
+        // 遅刻後は操作不可
+        if (this.isLate) {
+            return;
+        }
+
+        // 被弾硬直中
+        if (!this.canMove) {
+            return;
+        }
+
+        // =========================
         // 左移動
+        // =========================
         if (cursors.left.isDown) {
 
             this.setVelocityX(-this.moveSpeed);
 
-            
+            // 左向き
+            this.setFlipX(true);
 
         }
+
+        // =========================
         // 右移動
+        // =========================
         else if (cursors.right.isDown) {
 
             this.setVelocityX(this.moveSpeed);
 
-            
+            // 右向き
+            this.setFlipX(false);
 
         }
+
+        // =========================
         // 停止
+        // =========================
         else {
 
             this.setVelocityX(0);
-            //徐々に停止する場合はからにする。
-
-            
 
         }
 
+        // =========================
         // ジャンプ
+        // =========================
         if (
             cursors.up.isDown &&
             this.isGrounded()
@@ -61,48 +93,179 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
         }
 
-        if (this.y > 600) {//画面下に落ちた場合は遅刻とする
-            this.emit("late");//プレイヤーが遅刻したことを通知するイベントを発火させるGameSceneへ通知
-        }
-        if (this.y < -100) {//画面上に出た場合は遅刻とする
-            this.emit("late");//プレイヤーが遅刻したことを通知するイベントを発火させるGameSceneへ通知
-        }
+        // =========================
+        // 画面外判定
+        // =========================
+        if (this.y > 600 || this.y < -100) {
 
+            this.triggerLate();
+
+        }
     }
 
-    /**
-     * ダメージ処理
-     * ほかのオブジェクトから呼び出されることを想定している。
-     */
-    takeDamage(amount) {
-        if(this.isInvincible) {
-            return;//無敵状態ならダメージを受けない
+    // =========================
+    // ダメージ処理
+    // =========================
+    takeDamage(amount, damageSource) {
+
+        // 遅刻済み
+        if (this.isLate) {
+            return;
         }
+
+        // 無敵中
+        if (this.isInvincible) {
+            return;
+        }
+
+        // =========================
+        // HP減少
+        // =========================
 
         const currentHP = DataManager.getHP();
 
-        const newHP = currentHP - amount;
+        DataManager.setHP(currentHP - amount);
 
-        this.isInvincible = true;//ダメージを受けたら無敵状態にする
-        this.scene.time.delayedCall(1000, () => { this.isInvincible = false; });//1秒後に無敵状態を解除する
+        // =========================
+        // ノックバック
+        // =========================
 
-        DataManager.setHP(newHP);
+        this.applyKnockback(damageSource);
 
-        if (newHP <= 0) {
+        // =========================
+        // 被弾硬直
+        // =========================
 
-            this.emit("late");//プレイヤーが遅刻したことを通知するイベントを発火させるGameSceneへ通知
+        this.canMove = false;
+
+        this.scene.time.delayedCall(200, () => {
+
+            this.canMove = true;
+
+        });
+
+        // =========================
+        // 無敵開始
+        // =========================
+
+        this.startInvincible();
+
+        // =========================
+        // 被弾演出
+        // =========================
+
+        this.playDamageAnimation();
+
+        // =========================
+        // HP確認
+        // =========================
+
+        if (DataManager.getHP() <= 0) {
+
+            this.triggerLate();
+
+        }
+    }
+
+    // =========================
+    // ノックバック
+    // =========================
+    applyKnockback(damageSource) {
+
+        // ダメージ元がない場合は無視
+        if (!damageSource) {
+            return;
+        }
+
+        // 左側から攻撃
+        if (this.x < damageSource.x) {
+
+            this.setVelocity(-250, -200);
 
         }
 
+        // 右側から攻撃
+        else {
+
+            this.setVelocity(250, -200);
+
+        }
     }
 
-    /**
-     * 接地判定
-     */
+    // =========================
+    // 無敵開始
+    // =========================
+    startInvincible() {
+
+        this.isInvincible = true;
+
+        this.scene.time.delayedCall(1000, () => {
+
+            this.endInvincible();
+
+        });
+    }
+
+    // =========================
+    // 無敵終了
+    // =========================
+    endInvincible() {
+
+        this.isInvincible = false;
+
+        // 色戻す
+        this.clearTint();
+
+        // 透明度戻す
+        this.setAlpha(1);
+
+        // Tween停止
+        this.scene.tweens.killTweensOf(this);
+    }
+
+    // =========================
+    // 被弾演出
+    // =========================
+    playDamageAnimation() {
+
+        // 古いTween削除
+        this.scene.tweens.killTweensOf(this);
+
+        // 赤色
+        this.setTint(0xff6666);
+
+        // 点滅
+        this.scene.tweens.add({
+            targets: this,
+            alpha: 0.3,
+            duration: 80,
+            yoyo: true,
+            repeat: 5
+        });
+    }
+
+    // =========================
+    // 遅刻通知
+    // =========================
+    triggerLate() {
+
+        // 多重防止
+        if (this.isLate) {
+            return;
+        }
+
+        this.isLate = true;
+
+        this.emit("late");
+    }
+
+    // =========================
+    // 接地判定
+    // =========================
     isGrounded() {
 
         return this.body.blocked.down;
 
     }
-
 }
+

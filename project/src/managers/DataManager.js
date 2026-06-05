@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import System from "../system/System.js";
+import System from "../systems/System.js";
 
 /**
  * DataManager

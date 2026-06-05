@@ -12,7 +12,7 @@ const config = {
   height: System.CONFIG.HEIGHT,
 
 
-  scene: [TitleScene, GameScene,ResultScene], 
+  scene: [TitleScene,GameScene,ResultScene], 
 
   physics: {
     default: System.CONFIG.PHYSICS.DEFAULT,
