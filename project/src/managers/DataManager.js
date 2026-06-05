@@ -1,34 +1,48 @@
-import System from "../system/System.js";
+import Phaser from "phaser";
+import System from "../systems/System.js";
 
 /**
  * DataManager
- * =========================
+ * =========================================================
  * ■ 役割
- * - プレイヤーの「状態」を管理する唯一の場所
+ * - プレイヤー状態の一元管理
  * - ステージ進行管理
- * - リトライ時のリセット処理
+ * - リトライ処理（遅刻後復帰）
  *
- * ■ 重要思想（I Wanna系）
- * - 「死にゲー前提」なので状態管理はシンプルにする
- * - ロジックは持たない（絶対に）
+ * ■ 設計書準拠
+ * - resetPlayerData() を使用する
+ * - 状態管理のみ担当（ロジックは持たない）
  */
 
 class DataManager {
   constructor() {
-    // =========================
+    // =====================================================
     // ■ プレイヤー状態
-    // =========================
+    // =====================================================
+
     this.hp = System.CONFIG.PLAYER.MAX_HP;
 
-    // =========================
-    // ■ ステージ進行
-    // =========================
-    this.currentStage = System.CONFIG.START_STAGE;
+    // 有給（ゲーム内リソース）
+    if (System.CONFIG.PLAYER.PAID_HOLIDAYS === undefined) {
+      throw new Error(
+        "PAID_HOLIDAYS is not defined in System.CONFIG.PLAYER"
+      );
+    }
 
-    // =========================
-    // ■ スコア・リザルト用（必要なら）
-    // =========================
-    this.deathCount = 0;
+    this.paidHolidays = System.CONFIG.PLAYER.PAID_HOLIDAYS;
+
+    // =====================================================
+    // ■ ステージ管理
+    // =====================================================
+
+    this.currentStage = System.CONFIG.START_STAGE;
+    this.respawnStage = System.CONFIG.START_STAGE;
+
+    // =====================================================
+    // ■ 遅刻カウント
+    // =====================================================
+
+    this.lateCount = 0;
   }
 
   // =========================================================
@@ -40,7 +54,19 @@ class DataManager {
   }
 
   setHP(value) {
-    this.hp = value;
+    this.hp = Math.max(0, value);
+  }
+
+  // =========================================================
+  // ■ 有給管理
+  // =========================================================
+
+  getPaidHolidays() {
+    return this.paidHolidays;
+  }
+
+  setPaidHolidays(value) {
+    this.paidHolidays = value;
   }
 
   // =========================================================
@@ -53,46 +79,36 @@ class DataManager {
 
   setCurrentStage(value) {
     this.currentStage = value;
+    this.respawnStage = value;
   }
 
   // =========================================================
-  // ■ プレイヤー死亡時などのリセット
+  // ■ リトライ処理
   // =========================================================
 
   resetPlayerData() {
-    // ---------------------------------
-    // ■ HPを初期値に戻す
-    // ---------------------------------
     this.hp = System.CONFIG.PLAYER.MAX_HP;
 
-    // ---------------------------------
-    // ■ ステージを初期状態へ戻す
-    // ---------------------------------
-    this.currentStage = System.CONFIG.START_STAGE;
+    // 有給も初期値へ戻す（null合体演算子なし）
+    this.paidHolidays = System.CONFIG.PLAYER.PAID_HOLIDAYS;
 
-    // ---------------------------------
-    // ■ 死亡回数加算（I Wanna系では重要）
-    // ---------------------------------
-    this.deathCount++;
+    this.currentStage = this.respawnStage;
+
+    this.lateCount++;
   }
 
   // =========================================================
-  // ■ デバッグ・統計系
+  // ■ デバッグ・統計
   // =========================================================
 
-  getDeathCount() {
-    return this.deathCount;
-  }
-
-  resetAll() {
-    this.hp = System.CONFIG.PLAYER.MAX_HP;
-    this.currentStage = System.CONFIG.START_STAGE;
-    this.deathCount = 0;
+  getLateCount() {
+    return this.lateCount;
   }
 }
 
-// =========================
-// ■ シングルトン化
-// =========================
+// =========================================================
+// ■ シングルトン
+// =========================================================
+
 const instance = new DataManager();
 export default instance;

@@ -1,21 +1,45 @@
+
+import Phaser from "phaser";
+
 export default class TitleScene extends Phaser.Scene {
+
     constructor() {
+
         super("TitleScene");
+
     }
 
     create() {
-        this.add.text(250, 250, "滝川さんの大出勤", {
-            fontSize: "32px",
+
+        // タイトル
+        this.add.text(220, 220, "LATE COMPANY", {
+            fontSize: "48px",
             fill: "#ffffff"
         });
 
-        this.add.text(200, 320, "Press ENTER to Start", {
-            fontSize: "20px",
+        // 説明
+        this.add.text(240, 320, "Press ENTER", {
+            fontSize: "24px",
             fill: "#aaaaaa"
         });
 
+        // Enter監視
         this.input.keyboard.on("keydown-ENTER", () => {
-            this.scene.start("GameScene");
+
+            this.startGame();
+
         });
     }
+
+    // =========================
+    // ゲーム開始
+    // =========================
+    startGame() {
+
+        this.scene.start("GameScene", {
+            stage: 1
+        });
+
+    }
 }
+
