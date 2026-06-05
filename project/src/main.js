@@ -1,10 +1,10 @@
 import Phaser from "phaser";
-import Stage2PreviewScene from "./scenes/Stage2PreviewScene.js";
+import Stage1PreviewScene from "./scenes/Stage1PreviewScene.js";
 
 new Phaser.Game({
   type: Phaser.AUTO,
   width: 1280,
   height: 720,
-  backgroundColor: "#1d1d1d",
-  scene: [Stage2PreviewScene],
+  backgroundColor: "#93dceb",
+  scene: [Stage1PreviewScene],
 });
