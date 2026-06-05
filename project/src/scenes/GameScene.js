@@ -246,6 +246,9 @@ export default class GameScene extends Phaser.Scene {
     // ゲームオーバー
     // =====================================
     gameOver() {
+        if(DataManager && DataManager.resetPlayerData) {
+            DataManager.resetPlayerData();
+        }
         this.scene.start("ResultScene");
     }
 
@@ -275,5 +278,10 @@ export default class GameScene extends Phaser.Scene {
         this.enemies.getChildren().forEach(enemy => {
             enemy.update?.();
         });
+        this.enemies.getChildren().forEach(enemy => {
+        if (enemy.y > 750 || enemy.x < -100 || enemy.x > 900) {
+            this.enemies.remove(enemy, true, true); // グループから削除し、スプライトも完全に消去
+        }
+    });
     }
 }

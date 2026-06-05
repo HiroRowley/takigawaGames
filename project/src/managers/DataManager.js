@@ -89,9 +89,7 @@ class DataManager {
   resetPlayerData() {
     this.hp = System.CONFIG.PLAYER.MAX_HP;
 
-    // 有給も初期値へ戻す（null合体演算子なし）
-    this.paidHolidays = System.CONFIG.PLAYER.PAID_HOLIDAYS;
-
+    
     this.currentStage = this.respawnStage;
 
     this.lateCount++;

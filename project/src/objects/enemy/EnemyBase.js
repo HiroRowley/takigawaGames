@@ -64,7 +64,7 @@ export default class EnemyBase extends Phaser.Physics.Arcade.Sprite {
             this.y < -100 ||
             this.y > 700) {
 
-            this.destroy();
+           
         }
     }
 }
