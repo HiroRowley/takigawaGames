@@ -1,5 +1,4 @@
-Stage2
- 
+
 // Stage2Map.js
  
 const TILE = 32;

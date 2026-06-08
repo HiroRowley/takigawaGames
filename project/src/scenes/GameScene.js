@@ -10,6 +10,8 @@ import Player from "../objects/Player.js";
 import Enemy from "../objects/enemy/EnemyBase.js";
 import Trap from "../objects/traps/TrapBase.js";
 import Noda from "../objects/enemy/Noda.js";
+import Shimba from "../objects/enemy/Shimba.js";
+import Yoshida from "../objects/enemy/Yoshida.js";
 
 export default class GameScene extends Phaser.Scene {
 
@@ -37,6 +39,14 @@ export default class GameScene extends Phaser.Scene {
         // 全ステージで使う画像をロード
         this.load.image("player", "asset/takigawa/player.png");
         this.load.image("noda", "asset/noda/noda.png");
+        this.load.image("shimba", "asset/shimba/shimba.png");
+        this.load.image("yoshida", "asset/yoshida/yoshida.png");
+        this.load.image("reihuuki", "asset/reihuuki/reihuuki.png");
+        this.load.image("isu", "asset/isu/isu.png");
+        this.load.image("dirt", "asset/stageGround/dirt.png");
+        this.load.image("grass", "asset/stageGround/grass.png");
+        this.load.image("rock", "asset/stageGround/rock.png");
+
         // ※ もしground画像を用意した場合は、ここでロードしてください。
         // 例: this.load.image("ground", "asset/ground.png");
     }
@@ -70,12 +80,23 @@ export default class GameScene extends Phaser.Scene {
 
         // 5. プレイヤー死亡監視
         this.setupPlayerDeathListener();
+
+        this.cameras.main.setZoom(0.5); 
+
+        // 2. マップの全体のサイズを計算（Stage1Map.js の W=46, H=34 より）
+        const mapWidth = 46 * this.TILE;
+        const mapHeight = 34 * this.TILE;
+
+        // 3. カメラの中心を、マップの真ん中（中心座標）に固定する
+        this.cameras.main.centerOn(mapWidth / 2, mapHeight / 2);
+
     }
 
     // =====================================
     // ステージ読込とデータ整形
     // =====================================
     loadStageData() {
+        console.log('ステージデータの読み込み');
         switch (this.stageNumber) {
             case 1:
                 this.stageData = Stage1;
@@ -108,11 +129,13 @@ export default class GameScene extends Phaser.Scene {
     // 座標変換ヘルパー関数 タイル座標 → ピクセル座標変換
     // =====================================
     getPixelX(x) {
-        return this.TILE ? (x * this.TILE + this.TILE / 2) : x;
+        console.log('座標ヘルパーxの呼び出し。');
+        return x * this.TILE;
     }
 
     getPixelY(y) {
-        return this.TILE ? (y * this.TILE + this.TILE / 2) : y;
+        console.log('座標ヘルパーyの呼び出し。');
+        return y * this.TILE;
     }
 
     // =====================================
@@ -125,6 +148,7 @@ export default class GameScene extends Phaser.Scene {
             
             let ground;
 
+            console.log('地形生成の呼び出し。');
             if(this.stageNumber === 1 || this.stageNumber === 2) {
                 // 画像アセットがある場合は、スプライトを生成してグループに追加
                 const hasGroundAbove = this.groundList.some(otherPos => {
@@ -135,7 +159,7 @@ export default class GameScene extends Phaser.Scene {
                 } else {
                     ground = this.add.sprite(px, py, "grass");
                 }
-                ground.setOrigin(0.5, 0.5); // タイルの中心を基準にする
+                ground.setOrigin(0, 0); // タイルの中心を基準にする
                 } else {
                 // 画像アセットがない場合は、茶色の四角(Rectangle)を生成してグループに追加
                     ground = this.add.rectangle(px, py, this.TILE, this.TILE, 0x654321); 
@@ -153,6 +177,7 @@ export default class GameScene extends Phaser.Scene {
     // Player生成
     // =====================================
     createPlayer() {
+        console.log('プレイヤー生成の呼び出し。');
         const px = this.getPixelX(this.playerSpawn.x);
         const py = this.getPixelY(this.playerSpawn.y);
 
@@ -164,6 +189,7 @@ export default class GameScene extends Phaser.Scene {
     // Enemy生成
     // =====================================
     createEnemies() {
+        console.log('敵生成の呼び出し。');
         this.enemySpawnList.forEach(pos => {
             const px = this.getPixelX(pos.x);
             const py = this.getPixelY(pos.y);
@@ -173,6 +199,12 @@ export default class GameScene extends Phaser.Scene {
                 case "noda": 
                     enemy = new Noda(this, px, py);
                     break; 
+                case "shimba":
+                    enemy = new Shimba(this, px, py);
+                    break;
+                case "yoshida":
+                    enemy = new Yoshida(this, px, py);
+                    break;
                 default: 
                     return; 
             }            
@@ -184,6 +216,7 @@ export default class GameScene extends Phaser.Scene {
     // ゴール生成
     // =====================================
     createGoal() {
+        console.log('ゴール生成の呼び出し。');
         if (!this.goalData) return;
 
         const px = this.getPixelX(this.goalData.x);
@@ -196,6 +229,7 @@ export default class GameScene extends Phaser.Scene {
     // Collider設定（追加・修正版）
     // =====================================
     setupCollisions() {
+        console.log('コライダー設定の呼び出し。');
         // 【重要】プレイヤーと地面の衝突判定を追加（これで床に立ちます）
         this.physics.add.collider(this.player, this.grounds);
 

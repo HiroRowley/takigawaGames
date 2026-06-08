@@ -27,7 +27,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.isLate = false;
         this.isInvincible = false;
         this.canMove = true;
-        this.setScale(0.1);
+        this.setScale(0.5);
 
         // 摩擦（必要なら有効化）
         // this.setDragX(600);
@@ -90,6 +90,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         ) {
 
             this.setVelocityY(-this.jumpPower);
+            this.scene.events.emit('playerjump'); 
 
         }
 
