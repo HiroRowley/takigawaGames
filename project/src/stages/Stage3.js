@@ -1,4 +1,4 @@
-Stage3
+
 // Stage3Map.js
  
 const TILE = 32;

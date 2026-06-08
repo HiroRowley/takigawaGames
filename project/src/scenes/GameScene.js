@@ -11,6 +11,7 @@ import Enemy from "../objects/enemy/EnemyBase.js";
 import Trap from "../objects/traps/TrapBase.js";
 import Noda from "../objects/enemy/Noda.js";
 import Yoshida from "../objects/enemy/Yoshida.js";
+import Shimba from "../objects/enemy/Shimba.js";
 
 export default class GameScene extends Phaser.Scene {
 
@@ -44,6 +45,7 @@ export default class GameScene extends Phaser.Scene {
         this.load.image("yoshida", "asset/yoshida/yoshida.png");
         // ※ もしground画像を用意した場合は、ここでロードしてください。
         // 例: this.load.image("ground", "asset/ground.png");
+        this.load.image("shimba", "asset/shimba/shimba.png");
         console.log("[preload] 画像アセットのロードを予約しました(yoshida含む)");
     }
     soundLoader(){
@@ -193,6 +195,7 @@ export default class GameScene extends Phaser.Scene {
         this.enemySpawnList.forEach((pos, index) => {
             const px = this.getPixelX(pos.x);
             const py = this.getPixelY(pos.y);
+            
 
             let enemy; 
             console.log(`[createEnemies] データ[${index}] を解析中... type: "${pos.type}", 位置: (${px}, ${py})`);
@@ -205,6 +208,10 @@ export default class GameScene extends Phaser.Scene {
                 case "yoshida":
                     enemy = new Yoshida(this, px, py);
                     break;
+                case "shimba": // ★これを追加
+                    enemy = new Shimba(this, px, py);
+                    break;
+
                 default: 
                     console.warn(`[createEnemies] 未知の敵タイプ、または対応していないタイプのためスキップされました: "${pos.type}"`);
                     return; 
@@ -249,6 +256,12 @@ export default class GameScene extends Phaser.Scene {
             this.player,
             this.enemies,
             (player, enemy) => {
+                // ★★★ ここを追加・修正 ★★★
+            // 相手がShimba（クラス名で判定）の場合は、踏みつけを無視して一発ダメージ
+            if (enemy.constructor.name === "Shimba") {
+                this.handlePlayerDamage(player, enemy);
+                return; 
+            }
                 if (player.body.velocity.y > 0 && player.y < enemy.y - 10) {
                     this.handleEnemyStomp(enemy, player);
                 } else {
@@ -295,6 +308,7 @@ export default class GameScene extends Phaser.Scene {
     // =====================================
     handleEnemyStomp(enemy, player) {
         console.log("[Combat] 敵を踏みつけました。");
+
         player.setVelocityY(-300); 
 
         if (enemy.die) {
@@ -354,11 +368,14 @@ export default class GameScene extends Phaser.Scene {
             enemy.update?.();
         });
         
-        this.enemies.getChildren().forEach(enemy => {
-            if (enemy.y > 750 || enemy.x < -100 || enemy.x > 900) {
-                console.log(`[CleanUp] 敵が画面外に出たため削除します。タイプ: ${enemy.constructor.name}, 座標: (${Math.round(enemy.x)}, ${Math.round(enemy.y)})`);
-                this.enemies.remove(enemy, true, true); // グループから削除し、スプライトも完全に消去
-            }
+        // GameScene.js 内の update() の敵画面外チェック部分
+
+this.enemies.getChildren().forEach(enemy => {
+    // 「enemy.y < -100」を条件に付け加える（上空に消えたら削除）
+    if (enemy.y > 750 || enemy.y < -100 || enemy.x < -100 || enemy.x > 900) {
+        console.log(`[CleanUp] 敵が画面外に出たため削除します。タイプ: ${enemy.constructor.name}`);
+        this.enemies.remove(enemy, true, true);
+    }
         });
     }
 }

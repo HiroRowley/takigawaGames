@@ -8,7 +8,7 @@ export default class Noda extends EnemyBase {
         this.speed = 150;
         this.attackPower = 1;
         this.direction = -1;//初期の移動方向を左に設定
-        this.setScale(0.05);
+        this.setScale(0.5);
     }
 
   
