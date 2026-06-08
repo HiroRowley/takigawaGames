@@ -8,15 +8,15 @@ export default class Shimba extends EnemyBase {
         super(scene, x, y, 'shimba');
         
         this.speed = 1100; // 上に飛び出す速度（好みに合わせて数値を調整してください）
-        this.attackPower = 2;
+        this.attackPower = 1;
         
-        this.setScale(0.5); // サイズ調整（必要なければ削除、または数値を変更してください）
+        this.setScale(0.3); // サイズ調整（必要なければ削除、または数値を変更してください）
     
         // =====================================
         // トリガー用のフラグと設定
         // =====================================
         this.isActivated = false; // すでに飛び出したかどうかのフラグ
-        this.activationRange = 50; // プレイヤーが何ピクセル以内に近づいたら起動するか
+        this.activationRange = 100; // プレイヤーが何ピクセル以内に近づいたら起動するか
 
         // 重力をゼロにする（これをしないと、重力で下に落ちてきてしまいます）
         if (this.body) {
