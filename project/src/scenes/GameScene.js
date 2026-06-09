@@ -12,11 +12,15 @@ import Trap from "../objects/traps/TrapBase.js";
 import Noda from "../objects/enemy/Noda.js";
 import Yoshida from "../objects/enemy/Yoshida.js";
 import Shimba from "../objects/enemy/Shimba.js";
+import Rowley from "../objects/enemy/Rowley.js";
+
+import Reihuuki from "../objects/traps/rehuuki.js";
 
 export default class GameScene extends Phaser.Scene {
 
     constructor() {
         super("GameScene");
+        this.enemySpawnTimer = 0;
     }
 
     // =====================================
@@ -43,20 +47,73 @@ export default class GameScene extends Phaser.Scene {
         this.load.image("player", "asset/takigawa/player.png");
         this.load.image("noda", "asset/noda/noda.png");
         this.load.image("yoshida", "asset/yoshida/yoshida.png");
+        this.load.image("rowley", "asset/rowley/rowley.png");
         // ※ もしground画像を用意した場合は、ここでロードしてください。
         // 例: this.load.image("ground", "asset/ground.png");
         this.load.image("shimba", "asset/shimba/shimba.png");
+        this.load.image("dirt", "asset/stageGround/dirt.png");
+        this.load.image("grass", "asset/stageGround/grass.png");
+        this.load.image("reihuuki", "asset/reihuuki/reihuuki.png");
+        this.load.image("reihuukiSpill", "asset/reihuuki/reihuukiSpillWater.png");
         console.log("[preload] 画像アセットのロードを予約しました(yoshida含む)");
     }
     soundLoader(){
         // サウンドのロードはここで行います。
         // 例: this.load.audio("jump", "asset/sounds/jump.wav");
+        this.load.audio("reihuukiNoise", "asset/sounds/reihuukiNoise.m4a");
     }
+    spawnRandomEnemy() {
+
+    // =========================
+    // ランダム座標
+    // =========================
+
+    const x = Phaser.Math.Between(100, 700);
+
+    // 上空から落とす
+    const y = 0;
+
+    // =========================
+    // ランダム雑魚
+    // =========================
+
+    const types = [
+        "noda",
+        "yoshida"
+    ];
+
+    const type =
+        Phaser.Utils.Array.GetRandom(types);
+
+    let enemy;
+
+    switch (type) {
+
+        case "noda":
+            enemy = new Noda(this, x, y);
+            break;
+
+        case "yoshida":
+            enemy = new Yoshida(this, x, y);
+            break;
+    }
+
+    if (!enemy) {
+        return;
+    }
+
+    this.enemies.add(enemy);
+
+    console.log(
+        `[Spawn] 雑魚敵生成: ${type}`
+    );
+}
 
     // =====================================
     // create
     // =====================================
     create() {
+        
         console.log("[create] オブジェクトグループを初期化します。");
         // オブジェクトグループを静的グループ(staticGroup)として初期化
         this.grounds = this.physics.add.staticGroup();
@@ -71,14 +128,18 @@ export default class GameScene extends Phaser.Scene {
 
         // 3. 各種オブジェクト生成
         this.createPlayer();
+        this.createBossLaser();
         this.createEnemies();
+        this.createTraps();
         this.createGoal();
-
+        
         // 4. コライダー（当たり判定）設定
         this.setupCollisions();
 
         // 5. プレイヤー死亡監視
         this.setupPlayerDeathListener();
+        
+        
         
         console.log("[create] シーンの初期構築がすべて完了しました。");
     }
@@ -131,41 +192,95 @@ export default class GameScene extends Phaser.Scene {
     getPixelY(y) {
         return this.TILE ? (y * this.TILE + this.TILE / 2) : y;
     }
+    
+    createTraps() {
+
+    console.log(
+        `[createTraps] トラップ生成開始`
+    );
+
+    this.trapList.forEach(data => {
+
+        const px = this.getPixelX(data.x);
+
+        const py = this.getPixelY(data.y);
+
+        let trap;
+
+        switch (data.type) {
+
+            case "reihuuki":
+                trap =new Reihuuki(this,px,py);
+                break;
+        }
+
+        if (!trap) {
+            return;
+        }
+
+        this.traps.add(trap);
+
+        console.log(
+            `[createTraps] ${data.type} を生成`
+        );
+    });
+}
 
     // =====================================
     // 地形生成
     // =====================================
-    createGround() {
-        console.log(`[createGround] 地形生成を開始します。配置予定数: ${this.groundList.length}`);
+        createGround() {
+
+        console.log(`[createGround] 地形生成開始`);
+
         this.groundList.forEach(pos => {
+
             const px = this.getPixelX(pos.x);
             const py = this.getPixelY(pos.y);
-            
-            let ground;
 
-            if(this.stageNumber === 1 || this.stageNumber === 2) {
-                // 画像アセットがある場合は、スプライトを生成してグループに追加
-                const hasGroundAbove = this.groundList.some(otherPos => {
-                    return otherPos.x === pos.x && otherPos.y === pos.y - 1;
+            // =========================
+            // 上にブロックがあるか判定
+            // =========================
+
+            const hasGroundAbove =
+                this.groundList.some(other => {
+                    return (
+                        other.x === pos.x &&
+                        other.y === pos.y - 1
+                    );
                 });
-                if (hasGroundAbove) {
-                    ground = this.add.sprite(px, py, "dirt");
-                } else {
-                    ground = this.add.sprite(px, py, "grass");
-                }
-                ground.setOrigin(0.5, 0.5); // タイルの中心を基準にする
-                } else {
-                // 画像アセットがない場合は、茶色の四角(Rectangle)を生成してグループに追加
-                    ground = this.add.rectangle(px, py, this.TILE, this.TILE, 0x654321); 
-                }
-            
-            // 静的グループに登録して物理化する
+
+            // =========================
+            // 画像選択
+            // =========================
+
+            const texture =
+                hasGroundAbove
+                    ? "dirt"
+                    : "grass";
+
+            // =========================
+            // staticImage生成
+            // =========================
+
+            const ground =
+                this.physics.add.staticImage(
+                    px,
+                    py,
+                    texture
+                );
+
+            ground.setDisplaySize(
+                this.TILE,
+                this.TILE
+            );
+
+            ground.refreshBody();
+
             this.grounds.add(ground);
-            
-            // 物理ボディのサイズを四角に合わせる
-            ground.body.setSize(this.TILE, this.TILE);
         });
-        console.log("[createGround] 地形生成が完了しました。");
+
+        console.log("[createGround] 完了");
     }
 
     // =====================================
@@ -204,14 +319,16 @@ export default class GameScene extends Phaser.Scene {
                 case "noda": 
                     enemy = new Noda(this, px, py);
                     break; 
-                // ★★★ ここに Yoshida の分岐がないのが原因である可能性が高いです！ ★★★
+                
                 case "yoshida":
                     enemy = new Yoshida(this, px, py);
                     break;
-                case "shimba": // ★これを追加
+                case "shimba":
                     enemy = new Shimba(this, px, py);
                     break;
-
+                case "rowley": 
+                    enemy = new Rowley(this, px, py);
+                    break;
                 default: 
                     console.warn(`[createEnemies] 未知の敵タイプ、または対応していないタイプのためスキップされました: "${pos.type}"`);
                     return; 
@@ -222,6 +339,10 @@ export default class GameScene extends Phaser.Scene {
         });
 
         console.log(`[createEnemies] 敵の生成が終了しました。実際に生成された数: ${spawnedCount} / ${this.enemySpawnList.length}`);
+    }
+
+    createBossLaser() {
+        this.lasers = this.physics.add.group();
     }
 
     // =====================================
@@ -254,7 +375,9 @@ export default class GameScene extends Phaser.Scene {
         // プレイヤーと敵の重なり（踏みつけ・被ダメージ）判定
         this.physics.add.overlap(
             this.player,
+            
             this.enemies,
+            
             (player, enemy) => {
                 // ★★★ ここを追加・修正 ★★★
             // 相手がShimba（クラス名で判定）の場合は、踏みつけを無視して一発ダメージ
@@ -271,15 +394,27 @@ export default class GameScene extends Phaser.Scene {
             null,
             this
         );
+        this.physics.add.overlap(
+            this.player,
+            this.lasers,
+            this.handlePlayerDamage,
+            null,
+            this
+        );
 
         // ダメージ判定 (Trap)
         this.physics.add.overlap(
-            this.player, 
-            this.traps, 
-            this.handlePlayerDamage, 
-            null, 
-            this
-        );
+    this.player,
+    this.traps,
+    (player, trap) => {
+
+        if (trap.activate) {
+            trap.activate(player);
+        }
+    },
+    null,
+    this
+);
 
         // ゴール判定
         if (this.goalSprite) {
@@ -359,23 +494,57 @@ export default class GameScene extends Phaser.Scene {
     // =====================================
     // update
     // =====================================
-    update() {
+        update(time, delta) {
+
+        // =========================
+        // プレイヤー更新
+        // =========================
+
         if (this.player && this.player.update) {
             this.player.update(this.cursors);
         }
 
-        this.enemies.getChildren().forEach(enemy => {
-            enemy.update?.();
-        });
-        
-        // GameScene.js 内の update() の敵画面外チェック部分
+        // =========================
+        // 敵更新
+        // =========================
 
-this.enemies.getChildren().forEach(enemy => {
-    // 「enemy.y < -100」を条件に付け加える（上空に消えたら削除）
-    if (enemy.y > 750 || enemy.y < -100 || enemy.x < -100 || enemy.x > 900) {
-        console.log(`[CleanUp] 敵が画面外に出たため削除します。タイプ: ${enemy.constructor.name}`);
-        this.enemies.remove(enemy, true, true);
-    }
+        this.enemies.getChildren().forEach(enemy => {
+
+            if (enemy.update) {
+
+                // player と time を渡す
+                enemy.update(this.player, time);
+            }
+
+            // =========================
+            // 画面外削除
+            // =========================
+
+            if (
+                enemy.y > 750 ||
+                enemy.y < -900 ||
+                enemy.x < -900 ||
+                enemy.x > 1300
+            ) {
+
+                console.log(
+                    `[CleanUp] 敵が画面外に出たため削除します。タイプ: ${enemy.constructor.name}`
+                );
+
+                this.enemies.remove(enemy, true, true);
+            }
         });
+        const hasRowley =
+            this.enemies.getChildren().some(
+                enemy => enemy instanceof Rowley
+            );
+
+        if (hasRowley && time > this.enemySpawnTimer) {
+
+            this.enemySpawnTimer =
+            time + 4000;
+
+            this.spawnRandomEnemy();
+        }
     }
 }

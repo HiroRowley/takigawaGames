@@ -54,8 +54,16 @@ const Stage1 = {
         {
             x: 15,
             y: 17,
-            type: "shimba",
+            type: "noda",
         },
+    ],
+
+    trapList:[
+        {
+            x: 20,
+            y: 16,
+            type: "reihuuki",
+        }
     ],
  
     // ゴール
