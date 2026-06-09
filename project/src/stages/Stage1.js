@@ -27,7 +27,7 @@ fill(0, 0, 0, 22);
  
 // 小さな足場
 fill(8, 12, 7, 7);
-fill(18, 22, 18, 18);
+fill(18, 22, 10, 10);
 fill(30, 35, 10, 10);
  
 // ゴール前の高台
@@ -53,8 +53,8 @@ const Stage1 = {
     enemySpawnList: [
         {
             x: 20,
-            y: 15,
-            type: "shimba",
+            y: 18,
+            type: "ueno",
         },
     ],
  
