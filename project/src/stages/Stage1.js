@@ -63,7 +63,24 @@ const Stage1 = {
             x: 20,
             y: 16,
             type: "reihuuki",
-        }
+        },
+        {
+            x:10,
+            y:14,
+            type:"itemBlock",
+            itemType:"empty"
+        },
+        {
+            x:25,
+            y:14,
+            type:"itemBlock",
+            itemType:"jousisu"
+        },
+        {
+            x:30,
+            y:16,
+            type:"bane",
+        },
     ],
  
     // ゴール

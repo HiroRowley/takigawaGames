@@ -13,8 +13,10 @@ import Noda from "../objects/enemy/Noda.js";
 import Yoshida from "../objects/enemy/Yoshida.js";
 import Shimba from "../objects/enemy/Shimba.js";
 import Rowley from "../objects/enemy/Rowley.js";
+import ItemBlock from "../objects/traps/itemBlock.js";
 
 import Reihuuki from "../objects/traps/rehuuki.js";
+import Bane from "../objects/traps/bane.js";
 
 export default class GameScene extends Phaser.Scene {
 
@@ -55,59 +57,68 @@ export default class GameScene extends Phaser.Scene {
         this.load.image("grass", "asset/stageGround/grass.png");
         this.load.image("reihuuki", "asset/reihuuki/reihuuki.png");
         this.load.image("reihuukiSpill", "asset/reihuuki/reihuukiSpillWater.png");
+        this.load.image("itemBlock","asset/item/itemBlock.jpg");
+        this.load.image("jousisu","asset/jousisu/jousisu.png");
+        this.load.image("darkOverlay","asset/jousisu/dark.png");
+        this.load.image("halo","asset/jousisu/halo.png");
+        this.load.image("baneNormall","asset/item/baneNormall.png");
+        this.load.image("baneStomp","asset/item/baneStomp.png");
         console.log("[preload] 画像アセットのロードを予約しました(yoshida含む)");
     }
     soundLoader(){
         // サウンドのロードはここで行います。
         // 例: this.load.audio("jump", "asset/sounds/jump.wav");
         this.load.audio("reihuukiNoise", "asset/sounds/reihuukiNoise.m4a");
+        this.load.audio("holyMusic", "asset/sounds/holyMusic.mp3");
+        this.load.audio("bane","asset/sounds/bane.mp3")
     }
+
     spawnRandomEnemy() {
 
-    // =========================
-    // ランダム座標
-    // =========================
+        // =========================
+        // ランダム座標
+        // =========================
 
-    const x = Phaser.Math.Between(100, 700);
+        const x = Phaser.Math.Between(100, 700);
 
-    // 上空から落とす
-    const y = 0;
+        // 上空から落とす
+        const y = 0;
 
-    // =========================
-    // ランダム雑魚
-    // =========================
+        // =========================
+        // ランダム雑魚
+        // =========================
 
-    const types = [
-        "noda",
-        "yoshida"
-    ];
+        const types = [
+            "noda",
+            "yoshida"
+        ];
 
-    const type =
-        Phaser.Utils.Array.GetRandom(types);
+        const type =
+            Phaser.Utils.Array.GetRandom(types);
 
-    let enemy;
+        let enemy;
 
-    switch (type) {
+        switch (type) {
 
-        case "noda":
-            enemy = new Noda(this, x, y);
-            break;
+            case "noda":
+                enemy = new Noda(this, x, y);
+                break;
 
-        case "yoshida":
-            enemy = new Yoshida(this, x, y);
-            break;
+            case "yoshida":
+                enemy = new Yoshida(this, x, y);
+                break;
+        }
+
+        if (!enemy) {
+            return;
+        }
+
+        this.enemies.add(enemy);
+
+        console.log(
+            `[Spawn] 雑魚敵生成: ${type}`
+        );
     }
-
-    if (!enemy) {
-        return;
-    }
-
-    this.enemies.add(enemy);
-
-    console.log(
-        `[Spawn] 雑魚敵生成: ${type}`
-    );
-}
 
     // =====================================
     // create
@@ -119,6 +130,7 @@ export default class GameScene extends Phaser.Scene {
         this.grounds = this.physics.add.staticGroup();
         this.enemies = this.physics.add.group();
         this.traps = this.physics.add.group(); // トラップ用のグループも一応初期化
+        this.banes = this.physics.add.group();
 
         // 1. ステージ読込
         this.loadStageData();
@@ -130,6 +142,7 @@ export default class GameScene extends Phaser.Scene {
         this.createPlayer();
         this.createBossLaser();
         this.createEnemies();
+        this.createBlocks();
         this.createTraps();
         this.createGoal();
         
@@ -142,6 +155,12 @@ export default class GameScene extends Phaser.Scene {
         
         
         console.log("[create] シーンの初期構築がすべて完了しました。");
+    }
+    createBane(){
+        this.bane = new Bane(this,500,400);
+    }
+    createBlocks(){
+        this.blocks = this.physics.add.group();
     }
 
     // =====================================
@@ -210,19 +229,23 @@ export default class GameScene extends Phaser.Scene {
         switch (data.type) {
 
             case "reihuuki":
-                trap =new Reihuuki(this,px,py);
+                    trap = new Reihuuki(this, px, py);
+                    // 冷風機は動的グループ (traps) に追加
+                    this.traps.add(trap);
+                    console.log(`[createTraps] ${data.type} を生成`);
+                    break;
+            case "itemBlock":
+                trap = new ItemBlock(this, px, py, data.itemType);
+                    // アイテムブロックは静的グループ (blocks) のみに追加
+                    this.blocks.add(trap);
+                    console.log(`[createTraps] ${data.type} を生成`);
+                    break;
+            case "bane":
+                trap = new Bane(this, px, py);
+                this.banes.add(trap); // ★this.traps ではなく、this.banes に追加する
+                console.log(`[createTraps] ${data.type} を生成`); // ※バッククォーテーションに直しておきました
                 break;
         }
-
-        if (!trap) {
-            return;
-        }
-
-        this.traps.add(trap);
-
-        console.log(
-            `[createTraps] ${data.type} を生成`
-        );
     });
 }
 
@@ -372,6 +395,8 @@ export default class GameScene extends Phaser.Scene {
         // 敵と地面の衝突判定も追加（敵が下に落ちていかないようにする）
         this.physics.add.collider(this.enemies, this.grounds);
 
+        this.physics.add.collider(this.banes, this.grounds);
+
         // プレイヤーと敵の重なり（踏みつけ・被ダメージ）判定
         this.physics.add.overlap(
             this.player,
@@ -401,20 +426,63 @@ export default class GameScene extends Phaser.Scene {
             null,
             this
         );
+        this.physics.add.collider(
+            this.player,
+            this.banes,
+            (player, bane) => {
+
+             // 上から踏んだ時だけ
+            if (this.player.body.velocity.y > 0) {
+                if(bane.bounce){
+                    bane.bounce(player);
+                }
+            }
+
+        }
+    );
+
+        this.physics.add.collider(
+            this.player,
+            this.traps,
+            (player, trap) => {
+
+                // 下から叩いたか
+                const isHitFromBelow = player.body.touching.up && trap.body.touching.down;
+
+                if (isHitFromBelow && trap.hit) {
+                    trap.hit(player);
+                }
+            },
+            null,
+            this
+        );
 
         // ダメージ判定 (Trap)
+        // Reihuuki
         this.physics.add.overlap(
-    this.player,
-    this.traps,
-    (player, trap) => {
+            this.player,
+            this.traps,
+            (player, trap) => {
+            
+                if (trap.activate) {
+                    trap.activate(player);
+                }
+            }
+        );
 
-        if (trap.activate) {
-            trap.activate(player);
-        }
-    },
-    null,
-    this
-);
+        // ItemBlock
+        this.physics.add.collider(
+            this.player,
+            this.blocks,
+            (player, block) => {
+            
+                const hitFromBelow = player.body.touching.up && block.body.touching.down;
+            
+                if (hitFromBelow && block.hit) {
+                    block.hit(player);
+                }
+            }
+        );
 
         // ゴール判定
         if (this.goalSprite) {
