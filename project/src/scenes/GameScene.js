@@ -12,6 +12,7 @@ import Trap from "../objects/traps/TrapBase.js";
 import Noda from "../objects/enemy/Noda.js";
 import Yoshida from "../objects/enemy/Yoshida.js";
 import Shimba from "../objects/enemy/Shimba.js";
+import Ueno from "../objects/enemy/Ueno.js";
 
 export default class GameScene extends Phaser.Scene {
 
@@ -46,6 +47,10 @@ export default class GameScene extends Phaser.Scene {
         // ※ もしground画像を用意した場合は、ここでロードしてください。
         // 例: this.load.image("ground", "asset/ground.png");
         this.load.image("shimba", "asset/shimba/shimba.png");
+        this.load.image("ueno", "asset/ueno/ueno.png"); // 砲台本体
+        this.load.image("bullet", "asset/ueno/bullet.png"); // 弾（とりあえずのデフォルト）
+        // もしハンマーなどを投げさせたいなら、それもロード
+        // this.load.image("hammer", "asset/ueno/hammer.png");
         console.log("[preload] 画像アセットのロードを予約しました(yoshida含む)");
     }
     soundLoader(){
@@ -63,6 +68,8 @@ export default class GameScene extends Phaser.Scene {
         this.enemies = this.physics.add.group();
         this.traps = this.physics.add.group(); // トラップ用のグループも一応初期化
 
+        // ★★★ ここを追加：弾専用の物理グループを作成 ★★★
+        this.bullets = this.physics.add.group();
         // 1. ステージ読込
         this.loadStageData();
 
@@ -211,6 +218,12 @@ export default class GameScene extends Phaser.Scene {
                 case "shimba": // ★これを追加
                     enemy = new Shimba(this, px, py);
                     break;
+                case "ueno": // ★これを追加
+                    enemy = new Ueno(this, px, py);
+                // もしステージデータ側でカスタム設定（弾の種類や角度）があれば適用する
+                // 例: pos.bulletTexture = "hammer", pos.fireAngle = 0 (右向き)
+                enemy.setCustomConfig(pos.bulletTexture, pos.fireAngle );
+                break;
 
                 default: 
                     console.warn(`[createEnemies] 未知の敵タイプ、または対応していないタイプのためスキップされました: "${pos.type}"`);
@@ -271,7 +284,14 @@ export default class GameScene extends Phaser.Scene {
             null,
             this
         );
-
+     // ★★★ ここを追加：プレイヤーと弾の当たり判定（踏めずにダメージのみ） ★★★   
+        this.physics.add.overlap(
+        this.player,
+        this.bullets,
+        this.handlePlayerDamage, // 当たったら即プレイヤーがダメージを受ける
+        null,
+        this
+    );
         // ダメージ判定 (Trap)
         this.physics.add.overlap(
             this.player, 
@@ -375,6 +395,16 @@ this.enemies.getChildren().forEach(enemy => {
     if (enemy.y > 750 || enemy.y < -100 || enemy.x < -100 || enemy.x > 900) {
         console.log(`[CleanUp] 敵が画面外に出たため削除します。タイプ: ${enemy.constructor.name}`);
         this.enemies.remove(enemy, true, true);
+        
+        
+        // ★★★ ここを追加：弾の画面外削除（画面外に出たら消す） ★★★
+    this.bullets.getChildren().forEach(bullet => {
+        // 壁（x < -50 など）に当たって止まるのではなく、壁を突き抜けて画面外に出たら消去
+        if (bullet.x < -50 || bullet.x > 950 || bullet.y < -50 || bullet.y > 750) {
+            console.log("[CleanUp] 弾が画面外に出たため削除します。");
+            this.bullets.remove(bullet, true, true);
+        }
+        });
     }
         });
     }
