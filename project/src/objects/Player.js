@@ -1,8 +1,8 @@
-
 // objects/Player.js
 
 import Phaser from "phaser";
 import DataManager from "../managers/DataManager.js";
+import PlayerMovement from "./PlayerMovement.js"; // ★追加: 作成した移動クラスをインポート
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
 
@@ -31,6 +31,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
         // 摩擦（必要なら有効化）
         // this.setDragX(600);
+        this.movement = new PlayerMovement(scene);
+        this.movement.createAnimations(); // アニメーションの生成
     }
 
     // =========================
@@ -48,55 +50,14 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
             return;
         }
 
-        // =========================
-        // 左移動
-        // =========================
-        if (cursors.left.isDown) {
-
-            this.setVelocityX(-this.moveSpeed);
-
-            // 左向き
-            this.setFlipX(true);
-
-        }
-
-        // =========================
-        // 右移動
-        // =========================
-        else if (cursors.right.isDown) {
-
-            this.setVelocityX(this.moveSpeed);
-
-            // 右向き
-            this.setFlipX(false);
-
-        }
-
-        // =========================
-        // 停止
-        // =========================
-        else {
-
-            this.setVelocityX(0);
-
-        }
-
-        // =========================
-        // ジャンプ
-        // =========================
-        if (
-            cursors.up.isDown &&
-            this.isGrounded()
-        ) {
-
-            this.setVelocityY(-this.jumpPower);
-            this.scene.events.emit('playerjump');
-        }
+        // ★修正: 元の移動処理をすべて置き換え、PlayerMovementに丸投げする
+        // 第二引数(player)として `this` を渡します
+        this.movement.move(this, cursors);
 
         // =========================
         // 画面外判定
         // =========================
-        if (this.y > 600 || this.y < -100) {
+        if (this.y > 750 || this.y < -100) {
 
             this.triggerLate();
 
@@ -268,4 +229,3 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     }
 }
-

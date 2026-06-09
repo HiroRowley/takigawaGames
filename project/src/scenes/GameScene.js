@@ -37,11 +37,15 @@ export default class GameScene extends Phaser.Scene {
         this.imageLoader();
         this.soundLoader();
     }
-    
 
-    imageLoader(){
+
+    imageLoader() {
         // 全ステージで使う画像をロード
-        this.load.image("player", "asset/takigawa/player.png");
+        this.load.spritesheet("player", "asset/takigawa/takigawaWalk00.jpg", {
+            frameWidth: 36,
+            frameHeight: 45
+        });
+
         this.load.image("noda", "asset/noda/noda.png");
         this.load.image("yoshida", "asset/yoshida/yoshida.png");
         // ※ もしground画像を用意した場合は、ここでロードしてください。
@@ -53,7 +57,7 @@ export default class GameScene extends Phaser.Scene {
         // this.load.image("hammer", "asset/ueno/hammer.png");
         console.log("[preload] 画像アセットのロードを予約しました(yoshida含む)");
     }
-    soundLoader(){
+    soundLoader() {
         // サウンドのロードはここで行います。
         // 例: this.load.audio("jump", "asset/sounds/jump.wav");
     }
@@ -86,7 +90,7 @@ export default class GameScene extends Phaser.Scene {
 
         // 5. プレイヤー死亡監視
         this.setupPlayerDeathListener();
-        
+
         console.log("[create] シーンの初期構築がすべて完了しました。");
     }
 
@@ -123,7 +127,7 @@ export default class GameScene extends Phaser.Scene {
         this.goalData = this.stageData.goalPosition || this.stageData.goal;
 
         console.log(`[loadStageData] 読み込み結果 -> TILE: ${this.TILE}, 地形数: ${this.groundList.length}件, 敵データ数: ${this.enemySpawnList.length}件`);
-        if(this.enemySpawnList.length > 0) {
+        if (this.enemySpawnList.length > 0) {
             console.log("[loadStageData] 敵配置データ内訳:", JSON.stringify(this.enemySpawnList));
         }
     }
@@ -147,10 +151,10 @@ export default class GameScene extends Phaser.Scene {
         this.groundList.forEach(pos => {
             const px = this.getPixelX(pos.x);
             const py = this.getPixelY(pos.y);
-            
+
             let ground;
 
-            if(this.stageNumber === 1 || this.stageNumber === 2) {
+            if (this.stageNumber === 1 || this.stageNumber === 2) {
                 // 画像アセットがある場合は、スプライトを生成してグループに追加
                 const hasGroundAbove = this.groundList.some(otherPos => {
                     return otherPos.x === pos.x && otherPos.y === pos.y - 1;
@@ -161,14 +165,14 @@ export default class GameScene extends Phaser.Scene {
                     ground = this.add.sprite(px, py, "grass");
                 }
                 ground.setOrigin(0.5, 0.5); // タイルの中心を基準にする
-                } else {
+            } else {
                 // 画像アセットがない場合は、茶色の四角(Rectangle)を生成してグループに追加
-                    ground = this.add.rectangle(px, py, this.TILE, this.TILE, 0x654321); 
-                }
-            
+                ground = this.add.rectangle(px, py, this.TILE, this.TILE, 0x654321);
+            }
+
             // 静的グループに登録して物理化する
             this.grounds.add(ground);
-            
+
             // 物理ボディのサイズを四角に合わせる
             ground.body.setSize(this.TILE, this.TILE);
         });
@@ -196,39 +200,37 @@ export default class GameScene extends Phaser.Scene {
     // =====================================
     createEnemies() {
         console.log(`[createEnemies] 敵の生成処理に入りました。データ総数: ${this.enemySpawnList.length}`);
-        
+
         let spawnedCount = 0;
 
         this.enemySpawnList.forEach((pos, index) => {
             const px = this.getPixelX(pos.x);
             const py = this.getPixelY(pos.y);
-            
 
-            let enemy; 
+
+            let enemy;
             console.log(`[createEnemies] データ[${index}] を解析中... type: "${pos.type}", 位置: (${px}, ${py})`);
 
             switch (pos.type) {
-                case "noda": 
+                case "noda":
                     enemy = new Noda(this, px, py);
-                    break; 
-                // ★★★ ここに Yoshida の分岐がないのが原因である可能性が高いです！ ★★★
+                    break;
                 case "yoshida":
                     enemy = new Yoshida(this, px, py);
                     break;
-                case "shimba": // ★これを追加
+                case "shimba":
                     enemy = new Shimba(this, px, py);
                     break;
-                case "ueno": // ★これを追加
+                case "ueno":
                     enemy = new Ueno(this, px, py);
-                // もしステージデータ側でカスタム設定（弾の種類や角度）があれば適用する
-                // 例: pos.bulletTexture = "hammer", pos.fireAngle = 0 (右向き)
-                enemy.setCustomConfig(pos.bulletTexture, pos.fireAngle );
-                break;
+                    // もしステージデータ側でカスタム設定（弾の種類や角度）があれば適用する
+                    enemy.setCustomConfig(pos.bulletTexture, pos.fireAngle);
+                    break;
 
-                default: 
+                default:
                     console.warn(`[createEnemies] 未知の敵タイプ、または対応していないタイプのためスキップされました: "${pos.type}"`);
-                    return; 
-            }            
+                    return;
+            }
             this.enemies.add(enemy);
             spawnedCount++;
             console.log(`[createEnemies] 敵 "${pos.type}" のインスタンスを生成し、グループに追加しました。`);
@@ -254,27 +256,22 @@ export default class GameScene extends Phaser.Scene {
     }
 
     // =====================================
-    // Collider設定（追加・修正版）
+    // Collider設定
     // =====================================
     setupCollisions() {
         console.log("[setupCollisions] 当たり判定（コライダー・オーバーラップ）を設定します。");
-        // 【重要】プレイヤーと地面の衝突判定を追加（これで床に立ちます）
         this.physics.add.collider(this.player, this.grounds);
-
-        // 敵と地面の衝突判定も追加（敵が下に落ちていかないようにする）
         this.physics.add.collider(this.enemies, this.grounds);
 
-        // プレイヤーと敵の重なり（踏みつけ・被ダメージ）判定
+        // プレイヤーと敵の重なり判定
         this.physics.add.overlap(
             this.player,
             this.enemies,
             (player, enemy) => {
-                // ★★★ ここを追加・修正 ★★★
-            // 相手がShimba（クラス名で判定）の場合は、踏みつけを無視して一発ダメージ
-            if (enemy.constructor.name === "Shimba") {
-                this.handlePlayerDamage(player, enemy);
-                return; 
-            }
+                if (enemy.constructor.name === "Shimba") {
+                    this.handlePlayerDamage(player, enemy);
+                    return;
+                }
                 if (player.body.velocity.y > 0 && player.y < enemy.y - 10) {
                     this.handleEnemyStomp(enemy, player);
                 } else {
@@ -284,20 +281,22 @@ export default class GameScene extends Phaser.Scene {
             null,
             this
         );
-     // ★★★ ここを追加：プレイヤーと弾の当たり判定（踏めずにダメージのみ） ★★★   
+
+        // プレイヤーと弾の当たり判定
         this.physics.add.overlap(
-        this.player,
-        this.bullets,
-        this.handlePlayerDamage, // 当たったら即プレイヤーがダメージを受ける
-        null,
-        this
-    );
+            this.player,
+            this.bullets,
+            this.handlePlayerDamage,
+            null,
+            this
+        );
+
         // ダメージ判定 (Trap)
         this.physics.add.overlap(
-            this.player, 
-            this.traps, 
-            this.handlePlayerDamage, 
-            null, 
+            this.player,
+            this.traps,
+            this.handlePlayerDamage,
+            null,
             this
         );
 
@@ -329,12 +328,12 @@ export default class GameScene extends Phaser.Scene {
     handleEnemyStomp(enemy, player) {
         console.log("[Combat] 敵を踏みつけました。");
 
-        player.setVelocityY(-300); 
+        player.setVelocityY(-300);
 
         if (enemy.die) {
             enemy.die();
         } else {
-            enemy.destroy(); 
+            enemy.destroy();
         }
     }
 
@@ -353,7 +352,7 @@ export default class GameScene extends Phaser.Scene {
     // =====================================
     gameOver() {
         console.log("[SceneTransition] ゲームオーバー。ResultSceneへ遷移します。");
-        if(DataManager && DataManager.resetPlayerData) {
+        if (DataManager && DataManager.resetPlayerData) {
             DataManager.resetPlayerData();
         }
         this.scene.start("ResultScene");
@@ -368,7 +367,7 @@ export default class GameScene extends Phaser.Scene {
 
         if (nextStage > 3) {
             console.log("[SceneTransition] 全ステージクリア。ResultSceneへ遷移します。");
-            this.scene.start("ResultScene", { clear: true }); 
+            this.scene.start("ResultScene", { clear: true });
             return;
         }
 
@@ -387,25 +386,21 @@ export default class GameScene extends Phaser.Scene {
         this.enemies.getChildren().forEach(enemy => {
             enemy.update?.();
         });
-        
-        // GameScene.js 内の update() の敵画面外チェック部分
 
-this.enemies.getChildren().forEach(enemy => {
-    // 「enemy.y < -100」を条件に付け加える（上空に消えたら削除）
-    if (enemy.y > 750 || enemy.y < -100 || enemy.x < -100 || enemy.x > 900) {
-        console.log(`[CleanUp] 敵が画面外に出たため削除します。タイプ: ${enemy.constructor.name}`);
-        this.enemies.remove(enemy, true, true);
-        
-        
-        // ★★★ ここを追加：弾の画面外削除（画面外に出たら消す） ★★★
-    this.bullets.getChildren().forEach(bullet => {
-        // 壁（x < -50 など）に当たって止まるのではなく、壁を突き抜けて画面外に出たら消去
-        if (bullet.x < -50 || bullet.x > 950 || bullet.y < -50 || bullet.y > 750) {
-            console.log("[CleanUp] 弾が画面外に出たため削除します。");
-            this.bullets.remove(bullet, true, true);
-        }
+        // 敵の画面外チェック（完全に独立させました）
+        this.enemies.getChildren().forEach(enemy => {
+            if (enemy.y > 750 || enemy.y < -100 || enemy.x < -100 || enemy.x > 900) {
+                console.log(`[CleanUp] 敵が画面外に出たため削除します。タイプ: ${enemy.constructor.name}`);
+                this.enemies.remove(enemy, true, true);
+            }
         });
-    }
+
+        // ★修正: 弾の画面外削除（入れ子バグを完全に解消し独立化）
+        this.bullets.getChildren().forEach(bullet => {
+            if (bullet.x < -50 || bullet.x > 950 || bullet.y < -50 || bullet.y > 750) {
+                console.log("[CleanUp] 弾が画面外に出たため削除します。");
+                this.bullets.remove(bullet, true, true);
+            }
         });
     }
 }
