@@ -41,9 +41,9 @@ export default class GameScene extends Phaser.Scene {
 
     imageLoader() {
         // 全ステージで使う画像をロード
-        this.load.spritesheet("player", "asset/takigawa/takigawaWalk00.jpg", {
-            frameWidth: 36,
-            frameHeight: 45
+        this.load.spritesheet("player", "asset/takigawa/takigawaWalk10.png", {
+            frameWidth: 597,
+            frameHeight: 592
         });
 
         this.load.image("noda", "asset/noda/noda.png");
