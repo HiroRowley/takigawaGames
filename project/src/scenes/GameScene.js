@@ -17,7 +17,7 @@ import Rowley from "../objects/enemy/Rowley.js";
 import ItemBlock from "../objects/traps/itemBlock.js";
 import Ueno from "../objects/enemy/Ueno.js"
 
-import Reihuuki from "../objects/traps/rehuuki.js";
+import Reihuuki from "../objects/traps/reihuuki.js";
 import Bane from "../objects/traps/bane.js";
 
 export default class GameScene extends Phaser.Scene {
@@ -184,21 +184,20 @@ export default class GameScene extends Phaser.Scene {
             case 3:
                 this.stageData = Stage3;
                 break;
-            case 4:
-                this.stageData = SampleStage;
-                break;
             default:
                 console.error(`ステージ ${this.stageNumber} のデータが見つかりません。`);
                 return;
                 
         }
-        this.stageData = SampleStage;
+        
 
         // タイルサイズの取得（ステージデータにTILEプロパティがない場合は64をデフォルトとする）
         this.TILE = this.stageData.TILE || 64;
 
         // データが存在しないプロパティは空配列 [] で初期化
         this.groundList = this.stageData.groundList || [];
+        this.blockList = this.stageData.blockList || [];
+        this.hiddenBlockList = this.stageData.hiddenBlockList || [];
         this.enemySpawnList = this.stageData.enemySpawnList || [];
         this.trapList = this.stageData.trapList || [];
 
@@ -313,7 +312,7 @@ export default class GameScene extends Phaser.Scene {
 
             this.grounds.add(ground);
         });
-
+        console.log("createGround切り分け",this.grounds.getChildren().length);
         console.log("[createGround] 完了");
     }
 
@@ -523,6 +522,7 @@ export default class GameScene extends Phaser.Scene {
     // Player死亡監視
     // =====================================
     setupPlayerDeathListener() {
+        
         this.player.on("late", () => {
             console.log("[Event] プレイヤー死亡イベントを受け取りました。");
             this.gameOver();
@@ -586,6 +586,7 @@ export default class GameScene extends Phaser.Scene {
     // update
     // =====================================
         update(time, delta) {
+            console.log("プレイヤーの高さ",this.player.y);
 
         // =========================
         // プレイヤー更新

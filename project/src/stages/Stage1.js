@@ -1,4 +1,4 @@
-// Stage1Map.js
+
 
 const TILE = 32;
 
@@ -30,13 +30,13 @@ function fillBlocks(x1, x2, y1, y2) {
 }
 
 // ★修正：隠しブロック用も「縦の範囲」を指定できるように統一！
-function fillHiddenBlocks(x1, x2, y1, y2) {
+/*function fillHiddenBlocks(x1, x2, y1, y2) {
   for (let y = y1; y <= y2; y++) {
     for (let x = x1; x <= x2; x++) {
       hiddenBlock.push({ x, y, isRevealed: false });
     }
   }
-}
+}*/
 
 function fillQuestionBlocks(x1, x2, y1, y2) {
   for (let y = y1; y <= y2; y++) {
@@ -70,41 +70,41 @@ fill(28, 30, 14, 16);  //土管
 // =====================================================
 // 【追加】壊せるブロックの配置データ定義
 // =====================================================
-fillBlocks(39, 39, 7, 7);
-fillBlocks(41,41, 7, 7);
+//fillBlocks(39, 39, 7, 7);
+//fillBlocks(41,41, 7, 7);
 
 // 例：x=15 から x=18 まで、y=13 の高さに4個横並びで配置 kakushi
-fillHiddenBlocks(42, 46, 10,10);
-fillHiddenBlocks(42, 43, 7,7);
+//fillHiddenBlocks(42, 46, 10,10);
+//fillHiddenBlocks(42, 43, 7,7);
 
 // 例：プレイヤーの初期位置の近く（x=5, y=15）に1個配置してみる ?
-fillQuestionBlocks(40, 40, 7, 7);
-fillQuestionBlocks(20, 20, 13, 13);
+//fillQuestionBlocks(40, 40, 7, 7);
+//fillQuestionBlocks(20, 20, 13, 13);
 
 // =========================
 // ステージデータ
 // =========================
 
-const Stage1Map = {
+const Stage1 = {
   TILE,
 
   groundList: ground,
- blockList: block,
- hiddenBlockList: hiddenBlock,
-questionBlockList: questionBlock,
+  blockList: block,
+  hiddenBlockList: hiddenBlock,
+  
 
 
   // プレイヤーの初期位置 (y=19の緑の地面の上に立たせるため、足元をy=19に設定)
   playerSpawn: {
-    x: 2,
-    y: 19,
+    x: 5,
+    y: 23,
   },
 
   // 敵 (画像内の黒丸の位置)
   enemySpawnList: [
-    { x: 17, y: 20, type: "noda" },     // 1体目のnoda (x:21, y:7付近)
-    { x: 28, y: 13, type: "shimba" },     // 2体目のnoda (x:28, y:7付近)
-    { x: 33, y: 16, type: "yoshida" },    // 右下のueno (x:42, y:29付近)
+    { x: 17, y: 19, type: "noda" },     // 1体目のnoda (x:21, y:7付近)
+    { x: 29, y: 14, type: "shimba" },     // 2体目のnoda (x:28, y:7付近)
+    { x: 33, y: 15, type: "yoshida" },    // 右下のueno (x:42, y:29付近)
   ],
 
   // 回復・アイテム (画像内の四角や星の位置)
@@ -113,10 +113,7 @@ questionBlockList: questionBlock,
     //{ x: 37, y: 13, type: "isu" },    // 最下層右側の星1 (x:36, y:32)
   //],
 
-  // ギミック (画像内の五角形の位置)
-  trapList: [
-    { x: 39, y: 12, type: "reihuuki" }, // 右側のreihuuki (x:39, y:12)
-  ],
+ 
 
   // =========================
   // 追加：土管（マリオ風の移動・障害物ギミック）
@@ -132,13 +129,25 @@ questionBlockList: questionBlock,
   // =========================
   // 追加：ジャンプ台（罠ギミック）
   // =========================
-trampolineList: [
+  trapList: [
     {
       x: 26,          // 配置したい横の位置（マス数）
-      y: 20,          // 配置したい縦の位置（マス数）
-      power: 999,     // 画面外へぶっ飛ぶ圧倒的ジャンプ力（フラグ用）
-      type: "trap"
+      y: 20,          // 配置したい縦の位置（マス数）   
+      type: "bane"
+    },
+    {
+      x:20,
+      y:13,
+      type:"itemBlock",
+      itemType:"empty"
+    },
+    {
+      x:40,
+      y:7,
+      type:"itemBlock",
+      itemType:"jousisu"
     }
+    
   ],
   
   goal: {
@@ -147,4 +156,4 @@ trampolineList: [
   },
 };
 
-export default Stage1Map;
+export default Stage1;

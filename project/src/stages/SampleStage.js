@@ -1,5 +1,5 @@
 // Stage1.js
- 
+
 const TILE = 32;
  
 const ground = [];

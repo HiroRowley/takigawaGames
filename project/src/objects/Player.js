@@ -21,16 +21,17 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         // =========================
 
         this.moveSpeed = 400;
-        this.jumpPower = 900;
+        this.jumpPower = 500;
 
         // 状態管理
         this.isLate = false;
         this.isInvincible = false;
         this.canMove = true;
-        this.setScale(0.5);
+        this.setDisplaySize(40,60);
 
         // 摩擦（必要なら有効化）
         // this.setDragX(600);
+        console.log("プレイヤーサイズ",this.body.width, this.body.height);
     }
 
     // =========================
@@ -96,7 +97,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         // =========================
         // 画面外判定
         // =========================
-        if (this.y > 600 || this.y < -600) {
+        if (this.y > 2000 || this.y < -730) {
 
             this.triggerLate();
 
