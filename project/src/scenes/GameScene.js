@@ -13,6 +13,7 @@ import Noda from "../objects/enemy/Noda.js";
 import Yoshida from "../objects/enemy/Yoshida.js";
 import Shimba from "../objects/enemy/Shimba.js";
 import Ueno from "../objects/enemy/Ueno.js";
+import Rowley from "../objects/enemy/Rowley.js";
 
 export default class GameScene extends Phaser.Scene {
 
@@ -46,8 +47,15 @@ export default class GameScene extends Phaser.Scene {
             frameHeight: 592
         });
 
-        this.load.image("noda", "asset/noda/noda.png");
-        this.load.image("yoshida", "asset/yoshida/yoshida.png");
+        this.load.spritesheet("noda", "asset/noda/noda.png", {
+            frameWidth: 100,
+            frameHeight: 128
+        });
+        this.load.image("yoshida", "asset/yoshida/yoshida01.png");
+        this.load.image("yoshida-walk-2", "asset/yoshida/animation/yoshidaWalk02.png");
+        this.load.image("yoshida-walk-3", "asset/yoshida/animation/yoshidaWalk03.png");
+        this.load.image("yoshida-walk-4", "asset/yoshida/animation/yoshidaWalk04.png");
+        this.load.image("rowley", "asset/rowley/rowleyWalking.png");
         // ※ もしground画像を用意した場合は、ここでロードしてください。
         // 例: this.load.image("ground", "asset/ground.png");
         this.load.image("shimba", "asset/shimba/shimba.png");
@@ -76,6 +84,7 @@ export default class GameScene extends Phaser.Scene {
         this.bullets = this.physics.add.group();
         // 1. ステージ読込
         this.loadStageData();
+        this.createEnemyTextureFrames();
 
         // 2. 地形生成
         this.createGround();
@@ -226,6 +235,10 @@ export default class GameScene extends Phaser.Scene {
                     // もしステージデータ側でカスタム設定（弾の種類や角度）があれば適用する
                     enemy.setCustomConfig(pos.bulletTexture, pos.fireAngle);
                     break;
+                case "rowley":
+                case "Rowley":
+                    enemy = new Rowley(this, px, py);
+                    break;
 
                 default:
                     console.warn(`[createEnemies] 未知の敵タイプ、または対応していないタイプのためスキップされました: "${pos.type}"`);
@@ -237,6 +250,18 @@ export default class GameScene extends Phaser.Scene {
         });
 
         console.log(`[createEnemies] 敵の生成が終了しました。実際に生成された数: ${spawnedCount} / ${this.enemySpawnList.length}`);
+    }
+
+    createEnemyTextureFrames() {
+        this.addTextureFrame("rowley", 0, 294, 284, 400, 600);
+        this.addTextureFrame("rowley", 1, 824, 284, 400, 600);
+    }
+
+    addTextureFrame(textureKey, frameKey, x, y, width, height) {
+        const texture = this.textures.get(textureKey);
+        if (!texture || texture.has(frameKey)) return;
+
+        texture.add(frameKey, 0, x, y, width, height);
     }
 
     // =====================================

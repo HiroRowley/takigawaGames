@@ -5,81 +5,109 @@ export default class EnemyMovement {
     this.scene = scene;
   }
 
-  // =========================
-  // アニメーション作成
-  // =========================
-  createAnimations(textureKey) {
-    const animKey = `${textureKey}-walk`;
-    
-    // 既に存在する場合は作成しない
-    if (this.scene.anims.exists(animKey)) return;
+  createAnimations(textureKey, config = null) {
+    if (!config) return null;
 
-    // 0 -> 1 -> 2 -> 1 の順で滑らかにループ（主人公と同じ3コマ構成を想定）
+    const animKey = `${textureKey}-walk`;
+
+    if (this.scene.anims.exists(animKey)) return animKey;
+
+    const frames = this.getAnimationFrames(textureKey, config.frames);
+    if (frames.length === 0) return null;
+
     this.scene.anims.create({
       key: animKey,
-      frames: [
-        { key: textureKey, frame: 0 },
-        { key: textureKey, frame: 1 },
-        { key: textureKey, frame: 2 },
-        { key: textureKey, frame: 1 }
-      ],
-      frameRate: 8,
-      repeat: -1,
+      frames,
+      frameRate: config.frameRate ?? 8,
+      repeat: config.repeat ?? -1,
     });
+
+    return animKey;
   }
 
-  // =========================
-  // クリボー系 noda（基本移動）
-  // =========================
+  getAnimationFrames(textureKey, frames) {
+    if (!Array.isArray(frames)) return [];
+
+    return frames
+      .map((frame) => this.normalizeFrame(textureKey, frame))
+      .filter((frame) => frame !== null);
+  }
+
+  normalizeFrame(textureKey, frame) {
+    if (typeof frame === "number") {
+      const texture = this.scene.textures.get(textureKey);
+      return texture?.has(frame) ? { key: textureKey, frame } : null;
+    }
+
+    if (typeof frame === "string") {
+      if (!this.scene.textures.exists(frame)) return null;
+
+      const texture = this.scene.textures.get(frame);
+      return { key: frame, frame: texture.firstFrame };
+    }
+
+    if (frame?.key) {
+      if (!this.scene.textures.exists(frame.key)) return null;
+
+      const texture = this.scene.textures.get(frame.key);
+      if (frame.frame === undefined) return { key: frame.key, frame: texture.firstFrame };
+
+      return texture?.has(frame.frame) ? { key: frame.key, frame: frame.frame } : null;
+    }
+
+    return null;
+  }
+
   moveWalker(enemy) {
     if (enemy.isDead) return;
 
-    // 物理移動
     enemy.setVelocityX(enemy.speed * enemy.direction);
-
-    // 壁衝突で反転
     this.handleWallCollision(enemy);
+    this.applyDirectionFlip(enemy);
 
-    // 向きに応じて画像を反転 (元の画像が左向きなら、右移動(direction=1)のときにflipX=true)
-    enemy.setFlipX(enemy.direction === 1);
-
-    // 地地にいるなら歩行アニメーション再生
     const onFloor = enemy.body.blocked.down || enemy.body.touching.down;
-    if (onFloor) {
-      enemy.anims.play(`${enemy.texture.key}-walk`, true);
+    if (onFloor && enemy.walkAnimationKey && this.scene.anims.exists(enemy.walkAnimationKey)) {
+      enemy.anims.play(enemy.walkAnimationKey, true);
     } else {
       enemy.anims.stop();
-      enemy.setFrame(1); // 空中では中間フレーム
+      this.setIdleFrame(enemy);
     }
   }
 
-  // =========================
-  // ジャンプ追従型 yoshida (ひな型)
-  // =========================
+  applyDirectionFlip(enemy) {
+    if (enemy.autoFlip === false) return;
+
+    const flipXWhenMovingRight = enemy.flipXWhenMovingRight ?? true;
+    enemy.setFlipX(enemy.direction === 1 ? flipXWhenMovingRight : !flipXWhenMovingRight);
+  }
+
+  setIdleFrame(enemy) {
+    const textureKey = enemy.idleTextureKey || enemy.texture.key;
+    if (!this.scene.textures.exists(textureKey)) return;
+
+    if (enemy.idleFrame !== undefined && enemy.idleFrame !== null) {
+      const texture = this.scene.textures.get(textureKey);
+      if (texture?.has(enemy.idleFrame)) {
+        enemy.setTexture(textureKey, enemy.idleFrame);
+        return;
+      }
+    }
+
+    enemy.setTexture(textureKey);
+  }
+
   moveJumper(enemy, player) {
     if (enemy.isDead) return;
-    // 今後ここにジャンプAIを実装
   }
 
-  // =========================
-  // 射撃型 ueno (ひな型)
-  // =========================
   moveShooter(enemy, player) {
     if (enemy.isDead) return;
-    // 今後ここに射撃AIを実装
   }
 
-  // =========================
-  // 土管から出てくる敵 shimba (ひな型)
-  // =========================
   pipeEnemy(enemy) {
     if (enemy.isDead) return;
-    // 今後ここに土管AIを実装
   }
 
-  // =========================
-  // 共通ユーティリティ
-  // =========================
   handleWallCollision(enemy) {
     if (enemy.body.blocked.left) {
       enemy.direction = 1;
@@ -89,7 +117,6 @@ export default class EnemyMovement {
   }
 
   detectPlayer(enemy, player) {
-    // プレイヤーとの距離計算用
     return Phaser.Math.Distance.Between(enemy.x, enemy.y, player.x, player.y);
   }
 }
