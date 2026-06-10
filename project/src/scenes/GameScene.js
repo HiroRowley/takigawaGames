@@ -178,8 +178,42 @@ export default class GameScene extends Phaser.Scene {
 
         // 5. プレイヤー死亡監視
         this.setupPlayerDeathListener();
-        
-        
+
+        this.hpText = this.add.text(
+            20,
+            20,
+            "",
+            {
+                fontSize: "28px",
+                color: "#ffffff",
+                stroke: "#000000",
+                strokeThickness: 4
+            }
+        );
+
+        this.paidHolidayText = this.add.text(
+            20,
+            60,
+            "",
+            {
+                fontSize: "28px",
+                color: "#ffffff",
+                stroke: "#000000",
+                strokeThickness: 4
+            }
+        );
+
+        // カメラ固定
+        this.hpText.setScrollFactor(0);
+        this.paidHolidayText.setScrollFactor(0);
+
+        // 最前面
+        this.hpText.setDepth(9999);
+        this.paidHolidayText.setDepth(9999);
+
+        this.updateUI();
+
+        this.isGameOver = false;
         
         console.log("[create] シーンの初期構築がすべて完了しました。");
     }
@@ -188,6 +222,22 @@ export default class GameScene extends Phaser.Scene {
     }
     createBlocks(){
         this.blocks = this.physics.add.group();
+    }
+    updateUI() {
+
+        const hp =
+            DataManager.getHP();
+
+        const paidHolidays =
+            DataManager.getPaidHolidays();
+
+        this.hpText.setText(
+            `HP : ${hp}`
+        );
+
+        this.paidHolidayText.setText(
+            `有給 : ${paidHolidays}`
+        );
     }
 
     // =====================================
@@ -578,12 +628,82 @@ export default class GameScene extends Phaser.Scene {
     // =====================================
     // ゲームオーバー
     // =====================================
-    gameOver() {
-        console.log("[SceneTransition] ゲームオーバー。ResultSceneへ遷移します。");
-        if(DataManager && DataManager.resetPlayerData) {
-            DataManager.resetPlayerData();
+        gameOver() {
+
+        // 二重実行防止
+        if (this.isGameOver) {
+            return;
         }
-        this.scene.start("ResultScene");
+
+        this.isGameOver = true;
+
+        console.log("[SceneTransition] ゲームオーバー演出開始");
+
+        // =========================
+        // ヒットストップ
+        // =========================
+
+        this.physics.pause();
+
+        // 敵停止
+        this.enemies.getChildren().forEach(enemy => {
+            if (enemy.anims) {
+                enemy.anims.pause();
+            }
+        });
+
+        // プレイヤー停止
+        this.player.setVelocity(0, 0);
+
+        // =========================
+        // 画面シェイク
+        // =========================
+
+        this.cameras.main.shake(
+            300,   // 時間
+            0.03   // 強さ
+        );
+
+        // =========================
+        // 少し止める
+        // =========================
+
+        this.time.delayedCall(1000, () => {
+
+            // =========================
+            // 再開
+            // =========================
+
+            this.physics.resume();
+
+            this.physics.world.timeScale = 2;
+
+            // =========================
+            // プレイヤー死亡演出
+            // =========================
+
+            this.player.body.enable = false;
+
+            this.player.setVelocity(
+                150,
+                -400
+            );
+
+            this.player.setAngularVelocity(600);
+
+            this.player.setGravityY(1200);
+
+            // =========================
+            // 少し待ってResultへ
+            // =========================
+
+            this.time.delayedCall(1500, () => {
+
+                this.scene.start("ResultScene");
+
+            });
+
+        });
     }
 
     // =====================================
@@ -607,6 +727,9 @@ export default class GameScene extends Phaser.Scene {
     // update
     // =====================================
         update(time, delta) {
+            if (this.isGameOver) {
+                return; 
+            }
             console.log("プレイヤーの高さ",this.player.y);
 
         // =========================
@@ -665,5 +788,6 @@ export default class GameScene extends Phaser.Scene {
                 this.bullets.remove(bullet, true, true);
             }
         });
+        this.updateUI();
     }
 }

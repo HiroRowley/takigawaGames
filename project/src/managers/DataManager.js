@@ -87,11 +87,17 @@ class DataManager {
   // =========================================================
 
   resetPlayerData() {
+
+    // 残機を減らす
+    this.paidHolidays--;
+
+    // HPだけ回復
     this.hp = System.CONFIG.PLAYER.MAX_HP;
 
-    
+    // ステージ復帰位置
     this.currentStage = this.respawnStage;
 
+    // 遅刻回数
     this.lateCount++;
   }
 

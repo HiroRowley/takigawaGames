@@ -1,4 +1,6 @@
 import Phaser from "phaser";
+import DataManager from "../managers/DataManager.js";
+
 
 export default class ResultScene extends Phaser.Scene {
     constructor() {
@@ -30,9 +32,18 @@ export default class ResultScene extends Phaser.Scene {
     }
 
     // リトライ処理
-    retryGame() {
-        // 本来ここで DataManager.resetPlayerData() などを呼ぶ
-        this.scene.start("GameScene");
+        retryGame() {
+        
+        // 残機減少 + HP回復
+        DataManager.resetPlayerData();
+        
+        this.scene.start(
+            "GameScene",
+            {
+                stageNumber:
+                    DataManager.getCurrentStage()
+            }
+        );
     }
 
     // タイトルへ戻る処理（責務分離）
