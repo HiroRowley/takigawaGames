@@ -1,5 +1,3 @@
-
-
 const TILE = 32;
 
 const W = 46;

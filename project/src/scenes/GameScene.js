@@ -729,6 +729,7 @@ export default class GameScene extends Phaser.Scene {
             // =========================
 
             this.time.delayedCall(1500, () => {
+                
 
                 this.scene.start("ResultScene");
 
