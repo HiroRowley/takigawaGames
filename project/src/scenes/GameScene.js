@@ -5,6 +5,7 @@ import DataManager from "../managers/DataManager.js";
 import Stage1 from "../stages/Stage1.js";
 import Stage2 from "../stages/Stage2.js";
 import Stage3 from "../stages/Stage3.js";
+import SampleStage from "../stages/SampleStage.js"
 
 import Player from "../objects/Player.js";
 import Enemy from "../objects/enemy/EnemyBase.js";
@@ -14,6 +15,7 @@ import Yoshida from "../objects/enemy/Yoshida.js";
 import Shimba from "../objects/enemy/Shimba.js";
 import Rowley from "../objects/enemy/Rowley.js";
 import ItemBlock from "../objects/traps/itemBlock.js";
+import Ueno from "../objects/enemy/Ueno.js"
 
 import Reihuuki from "../objects/traps/rehuuki.js";
 import Bane from "../objects/traps/bane.js";
@@ -63,6 +65,8 @@ export default class GameScene extends Phaser.Scene {
         this.load.image("halo","asset/jousisu/halo.png");
         this.load.image("baneNormall","asset/item/baneNormall.png");
         this.load.image("baneStomp","asset/item/baneStomp.png");
+        this.load.image("ueno","asset/ueno/ueno.png");
+        this.load.image("bullet","asset/ueno/bullet.png");
         console.log("[preload] 画像アセットのロードを予約しました(yoshida含む)");
     }
     soundLoader(){
@@ -73,7 +77,7 @@ export default class GameScene extends Phaser.Scene {
         this.load.audio("bane","asset/sounds/bane.mp3")
     }
 
-    spawnRandomEnemy() {
+    spawnRandomEnemy() {//Rowley
 
         // =========================
         // ランダム座標
@@ -90,7 +94,8 @@ export default class GameScene extends Phaser.Scene {
 
         const types = [
             "noda",
-            "yoshida"
+            "yoshida",
+            "ueno"
         ];
 
         const type =
@@ -131,6 +136,7 @@ export default class GameScene extends Phaser.Scene {
         this.enemies = this.physics.add.group();
         this.traps = this.physics.add.group(); // トラップ用のグループも一応初期化
         this.banes = this.physics.add.group();
+        this.bullets = this.physics.add.group();
 
         // 1. ステージ読込
         this.loadStageData();
@@ -178,10 +184,15 @@ export default class GameScene extends Phaser.Scene {
             case 3:
                 this.stageData = Stage3;
                 break;
+            case 4:
+                this.stageData = SampleStage;
+                break;
             default:
                 console.error(`ステージ ${this.stageNumber} のデータが見つかりません。`);
                 return;
+                
         }
+        this.stageData = SampleStage;
 
         // タイルサイズの取得（ステージデータにTILEプロパティがない場合は64をデフォルトとする）
         this.TILE = this.stageData.TILE || 64;
@@ -352,6 +363,11 @@ export default class GameScene extends Phaser.Scene {
                 case "rowley": 
                     enemy = new Rowley(this, px, py);
                     break;
+                case "ueno":
+                    enemy = new Ueno(this,px,py);
+
+                    enemy.setCustomConfig(pos.bulletTexture, pos.fireAngle);
+                    break;
                 default: 
                     console.warn(`[createEnemies] 未知の敵タイプ、または対応していないタイプのためスキップされました: "${pos.type}"`);
                     return; 
@@ -422,6 +438,13 @@ export default class GameScene extends Phaser.Scene {
         this.physics.add.overlap(
             this.player,
             this.lasers,
+            this.handlePlayerDamage,
+            null,
+            this
+        );
+        this.physics.add.overlap(
+            this.player,
+            this.bullets,
             this.handlePlayerDamage,
             null,
             this
@@ -614,5 +637,11 @@ export default class GameScene extends Phaser.Scene {
 
             this.spawnRandomEnemy();
         }
+        this.bullets.getChildren().forEach(bullet => {
+            if (bullet.x < -50 || bullet.x > 950 || bullet.y < -50 || bullet.y > 750) {
+                console.log("[CleanUp] 弾が画面外に出たため削除します。");
+                this.bullets.remove(bullet, true, true);
+            }
+        });
     }
 }
