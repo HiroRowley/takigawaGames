@@ -42,6 +42,18 @@ const Stage1 = {
  
     // 地形
     groundList: ground,
+
+    //椅子
+    isuList: [
+        { x: 12, y: 19.5 },
+        { x: 35, y: 19.5 },
+    ],
+
+    //スリーピング椅子
+    playerSleepList: [
+        { x: 12, y: 20 },
+        { x: 35, y: 20 },
+    ],
  
     // プレイヤー開始位置
     playerSpawn: {
