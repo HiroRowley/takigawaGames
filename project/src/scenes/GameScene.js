@@ -496,8 +496,14 @@ export default class GameScene extends Phaser.Scene {
         // ① 画面に描画されない「Zone」オブジェクトを作成
         this.goalZone = this.add.zone(centerX, centerY, pWidth, pHeight);
 
+        // ★修正：Zone の代わりに Rectangle を使用して画面に表示させる
+        // 第5引数：色（0xff0000 = 赤色）、第6引数：透明度（0.5 = 半透明）
+        this.goalZone = this.add.rectangle(centerX, centerY, pWidth, pHeight, 0xff0000, 0.5);
+
         // ② 静的（static）な物理ボディを有効化して、重なり判定を可能にする（第2引数をtrueにするとstaticになります）
         this.physics.add.existing(this.goalZone, true);
+
+        
 
         console.log(`[createGoal] 不可視のゴール範囲を配置しました。中心: (${centerX}, ${centerY}), サイズ: ${pWidth}x${pHeight}`);
     }
@@ -566,6 +572,18 @@ export default class GameScene extends Phaser.Scene {
 
         }
     );
+        if (this.goalZone) {
+        this.physics.add.overlap(
+            this.player,
+            this.goalZone,
+            () => {
+                // 重なったら次ステージへの遷移処理を呼ぶ
+                this.nextStage();
+            },
+            null,
+            this
+        );
+    }
 
         this.physics.add.collider(
             this.player,
@@ -609,7 +627,7 @@ export default class GameScene extends Phaser.Scene {
                 }
             }
         );
-
+        
         
     }
 
