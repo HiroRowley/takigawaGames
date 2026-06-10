@@ -56,6 +56,26 @@ const Stage1 = {
             y: 18,
             type: "ueno",
         },
+         {
+            x: 25,
+            y: 18,
+            type: "shimba",
+        },
+         {
+            x: 22,
+            y: 18,
+            type: "yoshida",
+        },
+         {
+            x: 15,
+            y: 18,
+            type: "noda",
+        },
+         {
+            x: 27,
+            y: 18,
+            type: "Rowley",
+        },
     ],
  
     // ゴール
