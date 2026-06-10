@@ -1,38 +1,24 @@
 import EnemyBase from "./EnemyBase.js";
-import Phaser from 'phaser';
 
 export default class Noda extends EnemyBase {
-
     constructor(scene, x, y) {
+        // 親クラス（EnemyBase）のコンストラクタを呼び出すことで、
+        // 自動的に 'noda' キーのアニメーションが生成されます
         super(scene, x, y, 'noda');
+        
         this.speed = 150;
         this.attackPower = 1;
-        this.direction = -1;//初期の移動方向を左に設定
-        this.setDisplaySize(42,64);
+        this.direction = -1; // 初期移動方向を左に設定
+        this.setDisplaySize(42, 64);
     }
 
-  
-    update() {
+    update(player) {
+        // 親クラスの画面外チェックなどを実行
+        super.update(player);
     
-        super.update();
-    
-        // 移動
-        this.setVelocityX(this.speed * this.direction);
-    
-        // 壁衝突で反転
-        if (this.body.blocked.left) {
-        
-            this.direction = 1;
-        
-        }
-    
-        else if (this.body.blocked.right) {
-        
-            this.direction = -1;
-        
+        // 死亡していなければ、EnemyMovementのWalker用の移動ロジックを実行
+        if (!this.isDead) {
+            this.movement.moveWalker(this);
         }
     }
-
-
-
 }

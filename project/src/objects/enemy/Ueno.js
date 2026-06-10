@@ -11,6 +11,7 @@ export default class Ueno extends EnemyBase {
         // 固定砲台なので動かない
         this.speed = 0;
         this.attackPower = 1; // 本体に触れてもダメージ
+        this.setDisplaySize(100, 150);
 
         if (this.body) {
             this.body.setAllowGravity(false); // 空中砲台もできるように重力オフ

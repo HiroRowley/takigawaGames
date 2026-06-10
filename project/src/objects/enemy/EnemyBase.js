@@ -1,70 +1,72 @@
 import Phaser from 'phaser';
+import EnemyMovement from '../EnemyMovement.js'; // ★追加
 
 export default class EnemyBase extends Phaser.Physics.Arcade.Sprite {
     constructor(scene, x, y, texture) {
-        // x,yは敵の初期位置、textureは敵のスプライト画像
         super(scene, x, y, texture);
-        // シーンに敵を追加
+        
+        // シーンに追加
         scene.add.existing(this);
-        // 物理の有効化
         scene.physics.add.existing(this);
         
-        this.speed = 100; // 速度
-        this.attackPower = 1; // 攻撃力
-        this.isDead = false; // 死亡フラグ（二重処理防止）
+        // 基本ステータス
+        this.speed = 100; 
+        this.attackPower = 1; 
+        this.direction = -1; // 初期方向（-1: 左, 1: 右）
+        this.isDead = false; 
+
+        // ★追加: 移動・アニメーション制御コンポーネントの生成と登録
+        this.movement = new EnemyMovement(scene);
+        this.movement.createAnimations(texture); 
     }
     
-    // 自身の攻撃力を返す（GameScene側から呼ばれる用）
+    // 自身の攻撃力を返す
     getDamage() {
         return this.attackPower;
     }
 
     // =====================================
-    // 敵の死亡処理（追加）
+    // 敵の死亡処理
     // =====================================
     die() {
-        if (this.isDead) return; // すでに死んでいたら何もしない
+        if (this.isDead) return; 
         this.isDead = true;
 
-        // 1. 当たり判定を無くす（物理ボディを無効化）
+        // アニメーションを止める
+        this.anims.stop();
+
+        // 1. 当たり判定を無くす
         this.body.enable = false;
 
-        // 2. 死亡時の演出（少し上に跳ねて、くるくる回りながら落ちる設定）
-        // ※物理がオフなので、Tweenアニメーションで下に落とします
+        // 2. 死亡時の演出（上に跳ねて、くるくる回りながら落ちる）
         this.scene.tweens.add({
             targets: this,
-            y: this.y - 50,          // 50ピクセル上に跳ねる
-            angle: 180,              // 180度回転
-            duration: 200,           // 0.2秒かけて上昇
+            y: this.y - 50,          
+            angle: 180,              
+            duration: 200,           
             ease: 'Power1.easeOut',
-            yoyo: false,
             onComplete: () => {
-                // 上昇が終わったら、画面下に真っ逆さまに落ちていく
                 this.scene.tweens.add({
                     targets: this,
-                    y: 800,          // 画面外（下）へ
-                    angle: 360,      // さらに回転
-                    duration: 500,   // 0.5秒かけて落ちる
+                    y: 800,          
+                    angle: 360,      
+                    duration: 500,   
                     ease: 'Power1.easeIn',
                     onComplete: () => {
-                        this.destroy(); // 画面外に落ちきったら削除
+                        this.destroy(); // 削除
                     }
                 });
             }
         });
     }
 
-    update() {
-        // すでに死んでいる場合は画面外判定などのアップデートをスキップ
+    update(player) {
+        // すでに死んでいる場合はスキップ
         if (this.isDead) return;
 
-        // 画面外に出たら消す
-        if (this.x < -100 ||
-            this.x > 900 ||
-            this.y < -100 ||
-            this.y > 700) {
-
-           
+        // 画面外に出たら削除
+        if (this.x < -100 || this.x > 900 || this.y < -100 || this.y > 750) {
+            this.destroy();
         }
     }
 }

@@ -10,7 +10,7 @@ export default class Shimba extends EnemyBase {
         this.speed = 1100; // 上に飛び出す速度（好みに合わせて数値を調整してください）
         this.attackPower = 1;
         
-        this.setScale(0.3); // サイズ調整（必要なければ削除、または数値を変更してください）
+        this.setDisplaySize(60, 90);; // サイズ調整（必要なければ削除、または数値を変更してください）
     
         // =====================================
         // トリガー用のフラグと設定
