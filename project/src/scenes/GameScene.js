@@ -454,8 +454,8 @@ export default class GameScene extends Phaser.Scene {
         this.lasers = this.physics.add.group();
     }
 
-    // =====================================
-    // ゴール生成
+   // =====================================
+    // ゴール生成（修正版）
     // =====================================
     createGoal() {
         if (!this.goalData) {
@@ -463,11 +463,25 @@ export default class GameScene extends Phaser.Scene {
             return;
         }
 
-        const px = this.getPixelX(this.goalData.x);
-        const py = this.getPixelY(this.goalData.y);
+        // タイル数からピクセル単位の幅と高さを計算
+        const pWidth = (this.goalData.width || 1) * this.TILE;
+        const pHeight = (this.goalData.height || 1) * this.TILE;
 
-        this.goalSprite = this.physics.add.staticSprite(px, py, "goal");
-        console.log(`[createGoal] ゴールを配置しました。位置: (${px}, ${py})`);
+        // 左上のピクセル座標を計算（お持ちの getPixelX/Y はマスの中心を返すため、ここでは直接計算します）
+        const startX = this.goalData.x * this.TILE;
+        const startY = this.goalData.y * this.TILE;
+
+        // PhaserのZoneは「中心座標」を基準に生成するため、範囲の中心点を計算
+        const centerX = startX + pWidth / 2;
+        const centerY = startY + pHeight / 2;
+
+        // ① 画面に描画されない「Zone」オブジェクトを作成
+        this.goalZone = this.add.zone(centerX, centerY, pWidth, pHeight);
+
+        // ② 静的（static）な物理ボディを有効化して、重なり判定を可能にする（第2引数をtrueにするとstaticになります）
+        this.physics.add.existing(this.goalZone, true);
+
+        console.log(`[createGoal] 不可視のゴール範囲を配置しました。中心: (${centerX}, ${centerY}), サイズ: ${pWidth}x${pHeight}`);
     }
 
     // =====================================
@@ -577,16 +591,7 @@ export default class GameScene extends Phaser.Scene {
             }
         );
 
-        // ゴール判定
-        if (this.goalSprite) {
-            this.physics.add.overlap(
-                this.player,
-                this.goalSprite,
-                () => { this.nextStage(); },
-                null,
-                this
-            );
-        }
+        
     }
 
     // =====================================
