@@ -1,6 +1,8 @@
 import Phaser from "phaser";
 import System from "../systems/System.js";
 
+import GameScene from "../scenes/GameScene.js"
+
 /**
  * DataManager
  * =========================================================
@@ -54,6 +56,7 @@ class DataManager {
   }
 
   setHP(value) {
+    
     this.hp = Math.max(0, value);
   }
 

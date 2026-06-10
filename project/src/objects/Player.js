@@ -128,6 +128,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
         DataManager.setHP(currentHP - amount);
 
+        this.scene.hitSound.play();
+
         // =========================
         // ノックバック
         // =========================

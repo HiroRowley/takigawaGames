@@ -75,8 +75,10 @@ export default class GameScene extends Phaser.Scene {
         // 例: this.load.audio("jump", "asset/sounds/jump.wav");
         this.load.audio("reihuukiNoise", "asset/sounds/reihuukiNoise.m4a");
         this.load.audio("holyMusic", "asset/sounds/holyMusic.mp3");
-        this.load.audio("bane","asset/sounds/bane.mp3")
-        this.load.audio("gameoverSound","asset/sounds/getHit.mp3");
+        this.load.audio("gameoverSound","asset/sounds/gameoverSound.mp3");
+        this.load.audio("bane","asset/sounds/bane.mp3");
+        this.load.audio("hit","asset/sounds/getHit.mp3");
+        this.load.audio("Stage3BGM","asset/sounds/battleWithRowely.mp3");
     }
 
     spawnRandomEnemy() {//Rowley
@@ -227,6 +229,17 @@ export default class GameScene extends Phaser.Scene {
     }
     createSound(){
         this.gameoverSound = this.sound.add("gameoverSound");
+        this.baneSound = this.sound.add("bane");
+        this.hitSound = this.sound.add("hit");
+
+        this.stage3BGM =this.sound.add("Stage3BGM", {
+            loop: true,
+            volume: 0.5
+        });
+
+        if (this.stageNumber === 3) {
+            this.stage3BGM.play();
+        }
     }
     updateUI() {
 
@@ -509,6 +522,7 @@ export default class GameScene extends Phaser.Scene {
             this.enemies,
             
             (player, enemy) => {
+                
                 // ★★★ ここを追加・修正 ★★★
             // 相手がShimba（クラス名で判定）の場合は、踏みつけを無視して一発ダメージ
             if (enemy.constructor.name === "Shimba") {
@@ -631,6 +645,7 @@ export default class GameScene extends Phaser.Scene {
     handlePlayerDamage(player, damageSource) {
         if (!damageSource.getDamage) return;
         const damage = damageSource.getDamage();
+        
         console.log(`[Combat] プレイヤーがダメージを受けます。ソース: ${damageSource.constructor.name}, ダメージ量: ${damage}`);
         player.takeDamage(damage);
     }

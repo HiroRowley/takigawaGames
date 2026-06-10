@@ -1,6 +1,8 @@
 import Phaser from "phaser";
 import TrapBase from "./TrapBase";
 
+import GameScene from "../../scenes/GameScene";
+
 export default class Bane extends TrapBase {
 
     constructor(scene, x, y) {
@@ -35,6 +37,11 @@ export default class Bane extends TrapBase {
 
         // 連続発動防止
         if (this.isPushed) return;
+
+        this.scene.sound.play("bane",{
+            loop:false,
+            volume:0.5
+        })
 
         this.isPushed = true;
 
