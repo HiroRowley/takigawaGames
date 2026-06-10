@@ -76,6 +76,7 @@ export default class GameScene extends Phaser.Scene {
         this.load.audio("reihuukiNoise", "asset/sounds/reihuukiNoise.m4a");
         this.load.audio("holyMusic", "asset/sounds/holyMusic.mp3");
         this.load.audio("bane","asset/sounds/bane.mp3")
+        this.load.audio("gameoverSound","asset/sounds/getHit.mp3");
     }
 
     spawnRandomEnemy() {//Rowley
@@ -172,6 +173,7 @@ export default class GameScene extends Phaser.Scene {
         this.createBlocks();
         this.createTraps();
         this.createGoal();
+        this.createSound();
         
         // 4. コライダー（当たり判定）設定
         this.setupCollisions();
@@ -222,6 +224,9 @@ export default class GameScene extends Phaser.Scene {
     }
     createBlocks(){
         this.blocks = this.physics.add.group();
+    }
+    createSound(){
+        this.gameoverSound = this.sound.add("gameoverSound");
     }
     updateUI() {
 
@@ -639,6 +644,12 @@ export default class GameScene extends Phaser.Scene {
         if (this.isGameOver) {
             return;
         }
+        this.sound.stopAll();
+
+        this.gameoverSound.play({
+            loop:false,
+            volume:0.8
+        })
 
         this.isGameOver = true;
 
