@@ -67,6 +67,7 @@ export default class GameScene extends Phaser.Scene {
         this.load.image("baneStomp","asset/item/baneStomp.png");
         this.load.image("ueno","asset/ueno/ueno.png");
         this.load.image("bullet","asset/ueno/bullet.png");
+        this.load.image("stage3BG","asset/BackGround/Stage3BackGround.png");
         console.log("[preload] 画像アセットのロードを予約しました(yoshida含む)");
     }
     soundLoader(){
@@ -129,6 +130,26 @@ export default class GameScene extends Phaser.Scene {
     // create
     // =====================================
     create() {
+        if (this.stageNumber === 3) {
+
+        // 画像背景
+        const bg = this.add.image(
+            0,
+            0,
+            "stage3BG"
+        );
+
+        bg.setOrigin(0, 0);
+
+        bg.displayWidth = this.scale.width;
+
+        bg.displayHeight = this.scale.height;
+
+        } else {
+            // 単色背景
+            this.cameras.main.setBackgroundColor("#45a2c7");
+        }
+
         
         console.log("[create] オブジェクトグループを初期化します。");
         // オブジェクトグループを静的グループ(staticGroup)として初期化
