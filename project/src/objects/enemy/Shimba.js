@@ -1,6 +1,7 @@
 import EnemyBase from "./EnemyBase.js";
 import Phaser from 'phaser';
 
+
 export default class Shimba extends EnemyBase {
 
     constructor(scene, x, y) {
@@ -65,6 +66,10 @@ export default class Shimba extends EnemyBase {
     activate() {
         this.isActivated = true;
         console.log("[Shimba] プレイヤーを感知！土管から飛び出します。");
+        // 飛び出し音
+        this.scene.sound.play("shimbaStart", {
+            volume: 1
+        });
 
         // 物理判定を有効化して、真上に発射
         if (this.body) {

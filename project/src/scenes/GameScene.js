@@ -80,6 +80,13 @@ export default class GameScene extends Phaser.Scene {
         this.load.audio("bane","asset/sounds/bane.mp3");
         this.load.audio("hit","asset/sounds/getHit.mp3");
         this.load.audio("Stage3BGM","asset/sounds/battleWithRowely.mp3");
+        this.load.audio("Stage1BGM","asset/sounds/Gemini音楽1.mp3");
+        this.load.audio("Stage2BGM","asset/sounds/secondStageMusic.mp3");
+        this.load.audio("jumpSound","asset/sounds/jump.mp3");
+        this.load.audio("enemyDown","asset/sounds/enemyDown.mp3");
+        this.load.audio("shimbaStart","asset/sounds/shimbaStart.mp3");
+        this.load.audio("laser","asset/sounds/laser.mp3");
+
     }
 
     spawnRandomEnemy() {//Rowley
@@ -162,6 +169,8 @@ export default class GameScene extends Phaser.Scene {
         this.traps = this.physics.add.group(); // トラップ用のグループも一応初期化
         this.banes = this.physics.add.group();
         this.bullets = this.physics.add.group();
+        this.uenos = this.physics.add.group();
+        this.yoshidas = this.physics.add.group();
 
         // 1. ステージ読込
         this.loadStageData();
@@ -229,19 +238,58 @@ export default class GameScene extends Phaser.Scene {
         this.blocks = this.physics.add.group();
     }
     createSound(){
-        this.gameoverSound = this.sound.add("gameoverSound");
-        this.baneSound = this.sound.add("bane");
-        this.hitSound = this.sound.add("hit");
 
-        this.stage3BGM =this.sound.add("Stage3BGM", {
-            loop: true,
-            volume: 0.5
-        });
+    this.gameoverSound = this.sound.add("gameoverSound");
+    this.baneSound = this.sound.add("bane");
+    this.hitSound = this.sound.add("hit");
 
-        if (this.stageNumber === 3) {
+    // =========================
+    // ステージ別BGM
+    // =========================
+
+    this.stage1BGM = this.sound.add("Stage1BGM", {
+        loop: true,
+        volume: 0.5
+    });
+
+    this.stage2BGM = this.sound.add("Stage2BGM", {
+        loop: true,
+        volume: 0.5
+    });
+
+    this.stage3BGM = this.sound.add("Stage3BGM", {
+        loop: true,
+        volume: 0.8
+    });
+    this.jumpSound = this.sound.add("jumpSound", {
+        volume: 0.5
+    });
+    this.enemyDownSound = this.sound.add("enemyDown", {
+        volume: 0.6
+    });
+    this.shimbaStartSound = this.sound.add("shimbaStart", {
+        volume: 0.7
+    });
+
+    // =========================
+    // ステージごとに再生
+    // =========================
+
+    switch (this.stageNumber) {
+
+        case 1:
+            this.stage1BGM.play();
+            break;
+
+        case 2:
+            this.stage2BGM.play();
+            break;
+
+        case 3:
             this.stage3BGM.play();
-        }
+            break;
     }
+}
     updateUI() {
 
         const hp =
@@ -467,6 +515,15 @@ export default class GameScene extends Phaser.Scene {
                     return; 
             }            
             this.enemies.add(enemy);
+            
+
+            if (enemy instanceof Ueno) {
+                this.uenos.add(enemy);
+            }
+
+            if (enemy instanceof Yoshida) {
+                this.yoshidas.add(enemy);
+            }
             spawnedCount++;
             console.log(`[createEnemies] 敵 "${pos.type}" のインスタンスを生成し、グループに追加しました。`);
         });
@@ -535,7 +592,7 @@ export default class GameScene extends Phaser.Scene {
                 this.handlePlayerDamage(player, enemy);
                 return; 
             }
-                if (player.body.velocity.y > 0 && player.y < enemy.y - 10) {
+                if (player.body.velocity.y > 0 && player.body.bottom <= enemy.body.top + 15) {
                     this.handleEnemyStomp(enemy, player);
                 } else {
                     this.handlePlayerDamage(player, enemy);
@@ -570,6 +627,24 @@ export default class GameScene extends Phaser.Scene {
             this
         );
     }
+        this.physics.add.collider(
+        this.uenos,
+        this.yoshidas,
+        (ueno, yoshida) => {
+
+            yoshida.direction *= -1;
+
+            // めり込み防止
+            if (yoshida.direction === 1) {
+                yoshida.x += 4;
+            } else {
+                yoshida.x -= 4;
+            }
+        },
+        null,
+        this
+    );
+    
         this.physics.add.collider(
             this.player,
             this.banes,
@@ -647,6 +722,7 @@ export default class GameScene extends Phaser.Scene {
     // =====================================
     handleEnemyStomp(enemy, player) {
         console.log("[Combat] 敵を踏みつけました。");
+        this.enemyDownSound.play();
 
         player.setVelocityY(-300); 
 
@@ -746,12 +822,33 @@ export default class GameScene extends Phaser.Scene {
             // 少し待ってResultへ
             // =========================
 
-            this.time.delayedCall(1500, () => {
-                
+             
+        console.log("[SceneTransition] プレイヤーがミスしました。");
+ 
+        if (DataManager) {
 
-                this.scene.start("ResultScene");
+    // DataManager側に処理を集約
+    DataManager.resetPlayerData();
 
-            });
+    const remainPaidHolidays =
+        DataManager.getPaidHolidays();
+
+    console.log(
+        `[有給管理] 残り有給: ${remainPaidHolidays}日`
+    );
+
+    // ResultSceneへ
+    this.scene.start("ResultScene", {
+        paidHolidays: remainPaidHolidays,
+        stageNumber: this.stageNumber
+    });
+
+} else {
+
+    this.scene.start("ResultScene", {
+        paidHolidays: 0
+    });
+}
 
         });
     }
@@ -760,6 +857,7 @@ export default class GameScene extends Phaser.Scene {
     // 次ステージ / クリア判定
     // =====================================
     nextStage() {
+        this.sound.stopAll();
         const nextStage = this.stageNumber + 1;
         console.log(`[SceneTransition] ステージクリア！ 次のステージ: ${nextStage}`);
 
@@ -807,10 +905,10 @@ export default class GameScene extends Phaser.Scene {
             // =========================
 
             if (
-                enemy.y > 750 ||
-                enemy.y < -900 ||
-                enemy.x < -900 ||
-                enemy.x > 1300
+                enemy.y > 2000 ||
+                enemy.y < -2000 ||
+                enemy.x < -2000 ||
+                enemy.x > 2000
             ) {
 
                 console.log(
@@ -833,7 +931,7 @@ export default class GameScene extends Phaser.Scene {
             this.spawnRandomEnemy();
         }
         this.bullets.getChildren().forEach(bullet => {
-            if (bullet.x < -50 || bullet.x > 950 || bullet.y < -50 || bullet.y > 750) {
+            if (bullet.x < -2000 || bullet.x > 2000 || bullet.y < -2000 || bullet.y > 2000) {
                 console.log("[CleanUp] 弾が画面外に出たため削除します。");
                 this.bullets.remove(bullet, true, true);
             }

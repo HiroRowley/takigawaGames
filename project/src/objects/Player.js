@@ -21,7 +21,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         // =========================
 
         this.moveSpeed = 400;
-        this.jumpPower = 900;
+        this.jumpPower = 600;
 
         // 状態管理
         this.isLate = false;
@@ -93,6 +93,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
             this.setVelocityY(-this.jumpPower);
             this.scene.events.emit('playerjump');
+            this.scene.jumpSound.play();
         }
 
         // =========================
