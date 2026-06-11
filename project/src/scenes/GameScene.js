@@ -596,16 +596,29 @@ export default class GameScene extends Phaser.Scene {
         console.log(`[Combat] プレイヤーがダメージを受けます。ソース: ${damageSource.constructor.name}, ダメージ量: ${damage}`);
         player.takeDamage(damage);
     }
-
-    // =====================================
-    // ゲームオーバー
+// =====================================
+    // ゲームオーバー（ミス時の処理）
     // =====================================
     gameOver() {
-        console.log("[SceneTransition] ゲームオーバー。ResultSceneへ遷移します。");
-        if(DataManager && DataManager.resetPlayerData) {
-            DataManager.resetPlayerData();
+        console.log("[SceneTransition] プレイヤーがミスしました。");
+
+        if (DataManager) {
+            // 有給を1減らす（マイナスにもなる）
+            const currentPaidHolidays = DataManager.getPaidHolidays();
+            const nextPaidHolidays = currentPaidHolidays - 1;
+            DataManager.setPaidHolidays(nextPaidHolidays);
+
+            console.log(`[有給管理] 残り有給: ${nextPaidHolidays}日`);
+
+            // 有給がマイナスでも、常に真っ黒画面（ResultScene）へ飛ばす
+            this.scene.start("ResultScene", { 
+                paidHolidays: nextPaidHolidays,
+                stageNumber: this.stageNumber 
+            });
+            
+        } else {
+            this.scene.start("ResultScene", { paidHolidays: 0 });
         }
-        this.scene.start("ResultScene");
     }
 
     // =====================================
