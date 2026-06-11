@@ -1,5 +1,7 @@
 import Phaser from "phaser";
-import System from "../system/System.js";
+import System from "../systems/System.js";
+
+import GameScene from "../scenes/GameScene.js"
 
 /**
  * DataManager
@@ -54,6 +56,7 @@ class DataManager {
   }
 
   setHP(value) {
+    
     this.hp = Math.max(0, value);
   }
 
@@ -87,13 +90,17 @@ class DataManager {
   // =========================================================
 
   resetPlayerData() {
+
+    // 残機を減らす
+    this.paidHolidays--;
+
+    // HPだけ回復
     this.hp = System.CONFIG.PLAYER.MAX_HP;
 
-    // 有給も初期値へ戻す（null合体演算子なし）
-    this.paidHolidays = System.CONFIG.PLAYER.PAID_HOLIDAYS;
-
+    // ステージ復帰位置
     this.currentStage = this.respawnStage;
 
+    // 遅刻回数
     this.lateCount++;
   }
 

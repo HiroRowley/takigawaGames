@@ -1,31 +1,45 @@
+
 import Phaser from "phaser";
 
-export default class GameScene extends Phaser.Scene {
+export default class TitleScene extends Phaser.Scene {
+
     constructor() {
-        super("GameScene"); // このSceneの識別名（TitleSceneから遷移してくる先）
+
+        super("TitleScene");
+
     }
 
     create() {
-        // ゲーム画面であることを示すテキスト表示
-        this.add.text(250, 250, "GAME SCENE", {
-            fontSize: "32px",
+
+        // タイトル
+        this.add.text(220, 220, "滝川さんの大出勤", {
+            fontSize: "48px",
             fill: "#ffffff"
         });
 
-        // 次のSceneへ進むための操作説明
-        this.add.text(180, 320, "Press SPACE to Result", {
-            fontSize: "20px",
+        // 説明
+        this.add.text(240, 320, "Press ENTER to start", {
+            fontSize: "24px",
             fill: "#aaaaaa"
         });
 
-        // SPACEキーが押されたときの処理を登録
-        this.input.keyboard.on("keydown-SPACE", () => {
-            // ResultSceneへ画面遷移
-            this.scene.start("ResultScene");
+        // Enter監視
+        this.input.keyboard.on("keydown-ENTER", () => {
+
+            this.startGame();
+
         });
     }
 
-    // startGame(){
+    // =========================
+    // ゲーム開始
+    // =========================
+    startGame() {
 
-    // }
+        this.scene.start("GameScene", {
+            stage: 1
+        });
+
+    }
 }
+
