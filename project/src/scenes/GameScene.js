@@ -431,6 +431,11 @@ export default class GameScene extends Phaser.Scene {
         // ② 静的（static）な物理ボディを有効化して、重なり判定を可能にする（第2引数をtrueにするとstaticになります）
         this.physics.add.existing(this.goalZone, true);
 
+        // ★★★ デバッグ用：ゴールの枠線を描画（太さ2px、緑色） ★★★
+       /* const debugGraphics = this.add.graphics();
+        debugGraphics.lineStyle(2, 0x00ff00, 1); 
+        debugGraphics.strokeRect(startX, startY, pWidth, pHeight);*/
+
         console.log(`[createGoal] 不可視のゴール範囲を配置しました。中心: (${centerX}, ${centerY}), サイズ: ${pWidth}x${pHeight}`);
     }
 
@@ -497,6 +502,18 @@ export default class GameScene extends Phaser.Scene {
 
         }
     );
+    if (this.goalZone) {
+        this.physics.add.overlap(
+            this.player,
+            this.goalZone,
+            () => {
+                // 重なったら次ステージへの遷移処理を呼ぶ
+                this.nextStage();
+            },
+            null,
+            this
+        );
+    }
 
         this.physics.add.collider(
             this.player,
