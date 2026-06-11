@@ -54,6 +54,7 @@ export default class GameScene extends Phaser.Scene {
         this.load.image("rowley", "asset/rowley/rowley.png");
         // ※ もしground画像を用意した場合は、ここでロードしてください。
         // 例: this.load.image("ground", "asset/ground.png");
+        this.load.image("rock", "asset/stageGround/rock.png");
         this.load.image("shimba", "asset/shimba/shimba.png");
         this.load.image("dirt", "asset/stageGround/dirt.png");
         this.load.image("grass", "asset/stageGround/grass.png");
@@ -68,6 +69,9 @@ export default class GameScene extends Phaser.Scene {
         this.load.image("ueno","asset/ueno/ueno.png");
         this.load.image("bullet","asset/ueno/bullet.png");
         this.load.image("stage3BG","asset/BackGround/Stage3BackGround.png");
+
+        this.load.image("dokan", "asset/dokan/dokan.png");
+
         console.log("[preload] 画像アセットのロードを予約しました(yoshida含む)");
     }
     soundLoader(){
@@ -159,11 +163,15 @@ export default class GameScene extends Phaser.Scene {
         this.banes = this.physics.add.group();
         this.bullets = this.physics.add.group();
 
+        this.pipes = this.physics.add.staticGroup();
+
         // 1. ステージ読込
         this.loadStageData();
 
         // 2. 地形生成
         this.createGround();
+
+        this.createPipes();
 
         // 3. 各種オブジェクト生成
         this.createPlayer();
@@ -173,6 +181,7 @@ export default class GameScene extends Phaser.Scene {
         this.createTraps();
         this.createGoal();
         
+
         // 4. コライダー（当たり判定）設定
         this.setupCollisions();
 
@@ -221,6 +230,8 @@ export default class GameScene extends Phaser.Scene {
         this.hiddenBlockList = this.stageData.hiddenBlockList || [];
         this.enemySpawnList = this.stageData.enemySpawnList || [];
         this.trapList = this.stageData.trapList || [];
+
+        this.pipeList = this.stageData.pipeList || [];
 
         // 必須データの取得
         this.playerSpawn = this.stageData.playerSpawn;
@@ -305,13 +316,17 @@ export default class GameScene extends Phaser.Scene {
                 });
 
             // =========================
-            // 画像選択
+            // 画像選択 (★ ここを修正)
             // =========================
+            let texture;
 
-            const texture =
-                hasGroundAbove
-                    ? "dirt"
-                    : "grass";
+            if (this.stageNumber === 3) {
+                // ステージ3の場合はすべてrockにする
+                texture = "rock";
+            } else {
+                // ステージ3以外は今まで通りdirtかgrass
+                texture = hasGroundAbove ? "dirt" : "grass";
+            }
 
             // =========================
             // staticImage生成
@@ -336,6 +351,48 @@ export default class GameScene extends Phaser.Scene {
         console.log("createGround切り分け",this.grounds.getChildren().length);
         console.log("[createGround] 完了");
     }
+// =====================================
+    // 土管生成
+    // =====================================
+    createPipes() {
+        console.log(`[createPipes] 土管生成開始`);
+
+        this.pipeList.forEach(data => {
+            let px = this.getPixelX(data.x);
+            let py = this.getPixelY(data.y);
+
+            if (data.offsetX) px += data.offsetX;
+            if (data.offsetY) py += data.offsetY;
+
+            const pipe = this.physics.add.staticImage(px, py, "dokan");
+
+            if (data.scale) {
+                pipe.setScale(data.scale);
+            }
+
+            // 一度サイズや位置を確定させる
+            pipe.refreshBody();
+
+            // 描画順を一番前にする
+            pipe.setDepth(100);
+
+            // ★ここを修正！：静的オブジェクト用の安全な書き方に変更
+            if (data.hitboxWidth && data.hitboxHeight) {
+                // 当たり判定のサイズを変更
+                pipe.body.setSize(data.hitboxWidth, data.hitboxHeight);
+                
+                // 位置の変更（setOffset関数ではなく、offsetプロパティを直接いじる）
+                if (data.hitboxOffsetX !== undefined && data.hitboxOffsetY !== undefined) {
+                    pipe.body.offset.set(data.hitboxOffsetX, data.hitboxOffsetY);
+                }
+            }
+
+            this.pipes.add(pipe);
+        });
+
+        console.log(`[createPipes] 完了`);
+    }
+
 
     // =====================================
     // Player生成
@@ -557,7 +614,9 @@ export default class GameScene extends Phaser.Scene {
                 }
             }
         );
-
+            // ★ここを追加：プレイヤーと敵が土管にぶつかるようにする
+        this.physics.add.collider(this.player, this.pipes);
+        this.physics.add.collider(this.enemies, this.pipes);
         
     }
 
@@ -669,10 +728,10 @@ export default class GameScene extends Phaser.Scene {
             // =========================
 
             if (
-                enemy.y > 750 ||
-                enemy.y < -900 ||
-                enemy.x < -900 ||
-                enemy.x > 1300
+                enemy.y > 2000 ||
+                enemy.y < -2000 ||
+                enemy.x < -2000 ||
+                enemy.x > 2000
             ) {
 
                 console.log(

@@ -58,13 +58,6 @@ export default class EnemyBase extends Phaser.Physics.Arcade.Sprite {
         // すでに死んでいる場合は画面外判定などのアップデートをスキップ
         if (this.isDead) return;
 
-        // 画面外に出たら消す
-        if (this.x < -100 ||
-            this.x > 900 ||
-            this.y < -100 ||
-            this.y > 700) {
-
-           
-        }
+       
     }
 }

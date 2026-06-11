@@ -69,6 +69,9 @@ export default class Shimba extends EnemyBase {
         // 物理判定を有効化して、真上に発射
         if (this.body) {
             this.body.enable = true;
+            // 【修正ポイント】
+            // 有効化した直後に、念のため再度重力を完全に無効化します
+            this.body.setAllowGravity(false);
             this.setVelocityY(-this.speed);
         }
     }
