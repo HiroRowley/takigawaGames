@@ -140,6 +140,13 @@ const Stage1 = {
       itemType:"empty"
     },
     {
+      x:22,
+      y:11,
+      type:"itemBlock",
+      itemType:"empty",
+      hidden:true
+    },
+    {
       x:40,
       y:5,
       type:"itemBlock",

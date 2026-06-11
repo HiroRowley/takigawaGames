@@ -235,7 +235,10 @@ export default class GameScene extends Phaser.Scene {
         this.bane = new Bane(this,500,400);
     }
     createBlocks(){
+
         this.blocks = this.physics.add.group();
+
+        this.hiddenBlocks = this.physics.add.group();
     }
     createSound(){
 
@@ -383,7 +386,7 @@ export default class GameScene extends Phaser.Scene {
                     console.log(`[createTraps] ${data.type} を生成`);
                     break;
             case "itemBlock":
-                trap = new ItemBlock(this, px, py, data.itemType);
+                trap = new ItemBlock(this, px, py, data.itemType,data.hidden||false);
                     // アイテムブロックは静的グループ (blocks) のみに追加
                     this.blocks.add(trap);
                     console.log(`[createTraps] ${data.type} を生成`);
@@ -608,6 +611,20 @@ export default class GameScene extends Phaser.Scene {
             null,
             this
         );
+       this.physics.add.collider(
+            this.player,
+            this.blocks,
+            (player, block) => {
+                // プレイヤーの頭上(up)が、ブロックの底面(down)に触れたか判定
+                const isHitFromBelow = player.body.touching.up && block.body.touching.down;
+
+                if (isHitFromBelow && block.hit) {
+                    block.hit(player);
+                }
+            },
+            null,
+            this
+        );
         this.physics.add.overlap(
             this.player,
             this.bullets,
@@ -689,19 +706,29 @@ export default class GameScene extends Phaser.Scene {
             }
         );
 
-        // ItemBlock
-        this.physics.add.collider(
-            this.player,
-            this.blocks,
-            (player, block) => {
-            
-                const hitFromBelow = player.body.touching.up && block.body.touching.down;
-            
-                if (hitFromBelow && block.hit) {
-                    block.hit(player);
-                }
-            }
-        );
+        this.physics.add.overlap(
+
+    this.player,
+
+    this.blocks,
+
+    (player, block) => {
+
+        if (!block.hidden) {
+            return;
+        }
+
+        // 下から接近中
+        const hitFromBelow =
+            player.body.velocity.y < 0 &&
+            player.body.top > block.body.bottom - 20;
+
+        if (hitFromBelow && block.hit) {
+
+            block.hit(player);
+        }
+    }
+);
 
         
     }
