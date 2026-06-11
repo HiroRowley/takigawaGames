@@ -13,6 +13,9 @@ import Ueno from "../objects/enemy/Ueno.js";
 
 import Isu from "../objects/items/Isu.js";
 
+import Timer from "../timer/Timer.js"
+import RowleySystem from "../systems/RowleySystem.js";
+
 export default class GameScene extends Phaser.Scene {
     constructor() {
         super("GameScene");
@@ -61,6 +64,11 @@ export default class GameScene extends Phaser.Scene {
     this.createIsu();
 
     this.setupCollisions();
+
+    this.timer = new Timer(this, 30);
+
+    this.timer.start();
+    this.rowleySystem = new RowleySystem(this);
 }
 
     // =========================
@@ -299,45 +307,15 @@ export default class GameScene extends Phaser.Scene {
     });
 }
 
-    update() {
+    update(time, delta) {
     if (this.player?.update) {
         this.player.update(this.cursors, this.canMove);
     }
+
+    this.timer?.update();
+
+    this.rowleySystem.update(time, delta);
 }
 
-    // setupCollisions() {
-    //     this.physics.add.collider(this.player, this.grounds);
 
-    //     this.physics.add.overlap(this.player, this.isus, (player, isu) => {
-
-    //         isu.onSit(player);
-
-    //         // ★安全ガード（超重要）
-    //         if (!this.playerSit) return;
-
-    //         this.player.setVisible(false);
-    //         this.player.body.enable = false;
-
-    //         this.playerSit.setPosition(player.x, player.y);
-    //         this.playerSit.setVisible(true);
-
-    //         this.time.delayedCall(2000, () => {
-    //             this.player.setVisible(true);
-    //             this.player.body.enable = true;
-    //             this.playerSit.setVisible(false);
-    //         });
-    //     });
-
-    //     // // ★ゴール（安全版）
-    //     // if (this.goalData) {
-    //     //     this.goalSprite = this.physics.add.staticSprite(
-    //     //         this.getPixelX(this.goalData.x),
-    //     //         this.getPixelY(this.goalData.y),
-    //     //         "goal"
-    //     //     );
-
-    //     //     this.physics.add.overlap(this.player, this.goalSprite, () => {
-    //     //         this.scene.restart();
-    //     //     });
-    //     // }
 }
