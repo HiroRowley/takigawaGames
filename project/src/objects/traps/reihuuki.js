@@ -55,6 +55,7 @@ extends TrapBase {
         this.scene.sound.play(
             "reihuukiNoise",
             {
+                loop:true,
                 volume: 1.5
             }
         );

@@ -8,8 +8,18 @@ export default class TitleScene extends Phaser.Scene {
         super("TitleScene");
 
     }
+    preload() {
+
+    this.load.audio(
+        "pressButton",
+        "asset/sounds/pressButton.mp3"
+    );
+
+}
 
     create() {
+        
+        this.pressButtonSound = this.sound.add("pressButton");
 
         // タイトル
         this.add.text(220, 220, "滝川さんの大出勤", {
@@ -35,6 +45,9 @@ export default class TitleScene extends Phaser.Scene {
     // ゲーム開始
     // =========================
     startGame() {
+        this.pressButtonSound.play({
+            volume: 0.5
+        });
 
         this.scene.start("GameScene", {
             stage: 1
