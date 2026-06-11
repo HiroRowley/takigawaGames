@@ -5,11 +5,20 @@ export default class Rowley extends EnemyBase {
 
     constructor(scene, x, y) {
 
-        super(scene, x, y, "rowley");
+        super(scene, x, y, "rowley", {
+            animation: {
+                frames: [0, 1, 0, 1],
+                frameRate: 6,
+            },
+            idleFrame: 0,
+            flipXWhenMovingRight: true,
+        });
 
         // =========================
         // 基本設定
         // =========================
+
+        this.setFrame(0);
 
         this.speed = 300;
         this.attackPower = 100;

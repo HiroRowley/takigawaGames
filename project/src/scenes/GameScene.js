@@ -15,7 +15,7 @@ import Yoshida from "../objects/enemy/Yoshida.js";
 import Shimba from "../objects/enemy/Shimba.js";
 import Rowley from "../objects/enemy/Rowley.js";
 import ItemBlock from "../objects/traps/itemBlock.js";
-import Ueno from "../objects/enemy/Ueno.js"
+import Ueno from "../objects/enemy/Ueno.js";
 
 import Reihuuki from "../objects/traps/reihuuki.js";
 import Bane from "../objects/traps/bane.js";
@@ -44,14 +44,24 @@ export default class GameScene extends Phaser.Scene {
         this.imageLoader();
         this.soundLoader();
     }
-    
 
-    imageLoader(){
+
+    imageLoader() {
         // 全ステージで使う画像をロード
-        this.load.image("player", "asset/takigawa/player.png");
-        this.load.image("noda", "asset/noda/noda.png");
-        this.load.image("yoshida", "asset/yoshida/yoshida.png");
-        this.load.image("rowley", "asset/rowley/rowley.png");
+        this.load.spritesheet("player", "asset/takigawa/takigawaWalk10.png", {
+            frameWidth: 597,
+            frameHeight: 592
+        });
+
+        this.load.spritesheet("noda", "asset/noda/noda.png", {
+            frameWidth: 100,
+            frameHeight: 128
+        });
+        this.load.image("yoshida", "asset/yoshida/yoshida01.png");
+        this.load.image("yoshida-walk-2", "asset/yoshida/animation/yoshidaWalk02.png");
+        this.load.image("yoshida-walk-3", "asset/yoshida/animation/yoshidaWalk03.png");
+        this.load.image("yoshida-walk-4", "asset/yoshida/animation/yoshidaWalk04.png");
+        this.load.image("rowley", "asset/rowley/rowleyWalking.png");
         // ※ もしground画像を用意した場合は、ここでロードしてください。
         // 例: this.load.image("ground", "asset/ground.png");
         this.load.image("shimba", "asset/shimba/shimba.png");
@@ -71,7 +81,7 @@ export default class GameScene extends Phaser.Scene {
         this.load.image("rock", "asset/stageGround/rock.png");
         console.log("[preload] 画像アセットのロードを予約しました(yoshida含む)");
     }
-    soundLoader(){
+    soundLoader() {
         // サウンドのロードはここで行います。
         // 例: this.load.audio("jump", "asset/sounds/jump.wav");
         this.load.audio("reihuukiNoise", "asset/sounds/reihuukiNoise.m4a");
@@ -124,6 +134,10 @@ export default class GameScene extends Phaser.Scene {
             case "yoshida":
                 enemy = new Yoshida(this, x, y);
                 break;
+
+            case "ueno":
+                enemy = new Ueno(this, x, y);
+                break;
         }
 
         if (!enemy) {
@@ -131,6 +145,10 @@ export default class GameScene extends Phaser.Scene {
         }
 
         this.enemies.add(enemy);
+
+        if (enemy instanceof Ueno) {
+            this.uenos.add(enemy);
+        }
 
         console.log(
             `[Spawn] 雑魚敵生成: ${type}`
@@ -174,6 +192,7 @@ export default class GameScene extends Phaser.Scene {
 
         // 1. ステージ読込
         this.loadStageData();
+        this.createEnemyTextureFrames();
 
         // 2. 地形生成
         this.createGround();
@@ -347,7 +366,7 @@ export default class GameScene extends Phaser.Scene {
         this.goalData = this.stageData.goalPosition || this.stageData.goal;
 
         console.log(`[loadStageData] 読み込み結果 -> TILE: ${this.TILE}, 地形数: ${this.groundList.length}件, 敵データ数: ${this.enemySpawnList.length}件`);
-        if(this.enemySpawnList.length > 0) {
+        if (this.enemySpawnList.length > 0) {
             console.log("[loadStageData] 敵配置データ内訳:", JSON.stringify(this.enemySpawnList));
         }
     }
@@ -483,40 +502,41 @@ export default class GameScene extends Phaser.Scene {
     // =====================================
     createEnemies() {
         console.log(`[createEnemies] 敵の生成処理に入りました。データ総数: ${this.enemySpawnList.length}`);
-        
+
         let spawnedCount = 0;
 
         this.enemySpawnList.forEach((pos, index) => {
             const px = this.getPixelX(pos.x);
             const py = this.getPixelY(pos.y);
-            
 
-            let enemy; 
+
+            let enemy;
             console.log(`[createEnemies] データ[${index}] を解析中... type: "${pos.type}", 位置: (${px}, ${py})`);
 
             switch (pos.type) {
-                case "noda": 
+                case "noda":
                     enemy = new Noda(this, px, py);
-                    break; 
-                
+                    break;
                 case "yoshida":
                     enemy = new Yoshida(this, px, py);
                     break;
                 case "shimba":
                     enemy = new Shimba(this, px, py);
                     break;
-                case "rowley": 
-                    enemy = new Rowley(this, px, py);
-                    break;
                 case "ueno":
-                    enemy = new Ueno(this,px,py);
-
+                    enemy = new Ueno(this, px, py);
+                    // もしステージデータ側でカスタム設定（弾の種類や角度）があれば適用する
                     enemy.setCustomConfig(pos.bulletTexture, pos.fireAngle);
                     break;
-                default: 
+                case "rowley":
+                case "Rowley":
+                    enemy = new Rowley(this, px, py);
+                    break;
+
+                default:
                     console.warn(`[createEnemies] 未知の敵タイプ、または対応していないタイプのためスキップされました: "${pos.type}"`);
-                    return; 
-            }            
+                    return;
+            }
             this.enemies.add(enemy);
             
 
@@ -538,8 +558,20 @@ export default class GameScene extends Phaser.Scene {
         this.lasers = this.physics.add.group();
     }
 
-   // =====================================
-    // ゴール生成（修正版）
+    createEnemyTextureFrames() {
+        this.addTextureFrame("rowley", 0, 294, 284, 400, 600);
+        this.addTextureFrame("rowley", 1, 824, 284, 400, 600);
+    }
+
+    addTextureFrame(textureKey, frameKey, x, y, width, height) {
+        const texture = this.textures.get(textureKey);
+        if (!texture || texture.has(frameKey)) return;
+
+        texture.add(frameKey, 0, x, y, width, height);
+    }
+
+    // =====================================
+    // ゴール生成
     // =====================================
     createGoal() {
         if (!this.goalData) {
@@ -569,14 +601,11 @@ export default class GameScene extends Phaser.Scene {
     }
 
     // =====================================
-    // Collider設定（追加・修正版）
+    // Collider設定
     // =====================================
     setupCollisions() {
         console.log("[setupCollisions] 当たり判定（コライダー・オーバーラップ）を設定します。");
-        // 【重要】プレイヤーと地面の衝突判定を追加（これで床に立ちます）
         this.physics.add.collider(this.player, this.grounds);
-
-        // 敵と地面の衝突判定も追加（敵が下に落ちていかないようにする）
         this.physics.add.collider(this.enemies, this.grounds);
 
         this.physics.add.collider(this.banes, this.grounds);
@@ -751,12 +780,12 @@ export default class GameScene extends Phaser.Scene {
         console.log("[Combat] 敵を踏みつけました。");
         this.enemyDownSound.play();
 
-        player.setVelocityY(-300); 
+        player.setVelocityY(-300);
 
         if (enemy.die) {
             enemy.die();
         } else {
-            enemy.destroy(); 
+            enemy.destroy();
         }
     }
 
@@ -774,7 +803,7 @@ export default class GameScene extends Phaser.Scene {
     // =====================================
     // ゲームオーバー
     // =====================================
-        gameOver() {
+    gameOver() {
 
         // 二重実行防止
         if (this.isGameOver) {
@@ -890,7 +919,7 @@ export default class GameScene extends Phaser.Scene {
 
         if (nextStage > 3) {
             console.log("[SceneTransition] 全ステージクリア。ResultSceneへ遷移します。");
-            this.scene.start("ResultScene", { clear: true }); 
+            this.scene.start("ResultScene", { clear: true });
             return;
         }
 
