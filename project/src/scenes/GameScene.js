@@ -68,6 +68,7 @@ export default class GameScene extends Phaser.Scene {
         this.load.image("ueno","asset/ueno/ueno.png");
         this.load.image("bullet","asset/ueno/bullet.png");
         this.load.image("stage3BG","asset/BackGround/Stage3BackGround.png");
+        this.load.image("rock", "asset/stageGround/rock.png");
         console.log("[preload] 画像アセットのロードを予約しました(yoshida含む)");
     }
     soundLoader(){
@@ -376,10 +377,15 @@ export default class GameScene extends Phaser.Scene {
             // 画像選択
             // =========================
 
-            const texture =
-                hasGroundAbove
-                    ? "dirt"
-                    : "grass";
+            let texture;
+ 
+            if (this.stageNumber === 3) {
+                // ステージ3の場合はすべてrockにする
+                texture = "rock";
+            } else {
+                // ステージ3以外は今まで通りdirtかgrass
+                texture = hasGroundAbove ? "dirt" : "grass";
+            }
 
             // =========================
             // staticImage生成
@@ -552,6 +558,18 @@ export default class GameScene extends Phaser.Scene {
             null,
             this
         );
+        if (this.goalZone) {
+        this.physics.add.overlap(
+            this.player,
+            this.goalZone,
+            () => {
+                // 重なったら次ステージへの遷移処理を呼ぶ
+                this.nextStage();
+            },
+            null,
+            this
+        );
+    }
         this.physics.add.collider(
             this.player,
             this.banes,

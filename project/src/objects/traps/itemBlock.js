@@ -257,6 +257,7 @@ export default class ItemBlock extends TrapBase {
                 console.log(
                     "上司が降臨した"
                 );
+                
 
                 // =========================
                 // 終了
@@ -269,6 +270,7 @@ export default class ItemBlock extends TrapBase {
                     halo.destroy();
 
                     boss.destroy();
+                    this.emit("late");
 
                     player.canMove = true;
 
