@@ -1,6 +1,8 @@
 
 import Phaser from "phaser";
 
+
+
 export default class EnemyMovement {
   constructor(scene) {
     this.scene = scene;

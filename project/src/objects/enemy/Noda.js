@@ -17,7 +17,7 @@ export default class Noda extends EnemyBase {
         this.direction = -1;//初期の移動方向を左に設定
         
         this.setDisplaySize(42, 64);
-        this.setBodyDisplaySize(32, 58);
+        this.body.setSize(32, 58);
     }
 
 

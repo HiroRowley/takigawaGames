@@ -24,7 +24,7 @@ export default class Yoshida extends EnemyBase {
         this.jumpVelocity = -500;
 
         this.setDisplaySize(76, 65);
-        this.setBodyDisplaySize(46, 58);
+        this.body.setSize(46, 58);
 
         this.scene.events.on("playerjump", this.respondToPlayerJump, this);
 
