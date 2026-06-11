@@ -151,6 +151,7 @@ export default class ItemBlock extends TrapBase {
         // =========================
         // 神BGM
         // =========================
+        scene.sound.stopAll();
 
         scene.sound.play("holyMusic");
 
@@ -223,19 +224,7 @@ export default class ItemBlock extends TrapBase {
                 }
             });
 
-            // 横ふわふわ
-            scene.tweens.add({
 
-                targets: boss,
-
-                x: boss.x + 10,
-
-                duration: 1200,
-
-                yoyo: true,
-
-                repeat: -1
-            });
 
             // =========================
             // 着地
@@ -270,7 +259,7 @@ export default class ItemBlock extends TrapBase {
                     halo.destroy();
 
                     boss.destroy();
-                    this.emit("late");
+                    player.emit("late");
 
                     player.canMove = true;
 
