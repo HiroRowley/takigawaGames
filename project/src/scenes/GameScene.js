@@ -259,7 +259,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.stage3BGM = this.sound.add("Stage3BGM", {
         loop: true,
-        volume: 0.5
+        volume: 0.8
     });
     this.jumpSound = this.sound.add("jumpSound", {
         volume: 0.5

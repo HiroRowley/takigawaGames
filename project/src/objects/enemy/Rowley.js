@@ -158,7 +158,7 @@ export default class Rowley extends EnemyBase {
 
         warning.destroy();
         scene.sound.play("laser", {
-            volume: 1.5
+            volume: 1
         });
 
         const laser = scene.add.rectangle(
