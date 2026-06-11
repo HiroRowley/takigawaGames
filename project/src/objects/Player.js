@@ -3,6 +3,7 @@
 
 import Phaser from "phaser";
 import DataManager from "../managers/DataManager.js";
+import PlayerMovement from "./PlayerMovement.js"; 
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
 
@@ -27,8 +28,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.isLate = false;
         this.isInvincible = false;
         this.canMove = true;
-        this.setDisplaySize(40,60);
-        this.setOrigin(0.5, 0.5);
+        this.setScale(0.12);
+
+        this.movement = new PlayerMovement(scene);
+        this.movement.createAnimations(); // アニメーションの生成
+        
 
         // 摩擦（必要なら有効化）
         // this.setDragX(600);
@@ -48,53 +52,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         // 被弾硬直中
         if (!this.canMove) {
             return;
+            
         }
+        // ★修正: 元の移動処理をすべて置き換え、PlayerMovementに丸投げする
+        // 第二引数(player)として `this` を渡します
+        this.movement.move(this, cursors);
 
-        // =========================
-        // 左移動
-        // =========================
-        if (cursors.left.isDown) {
-
-            this.setVelocityX(-this.moveSpeed);
-
-            // 左向き
-            this.setFlipX(true);
-
-        }
-
-        // =========================
-        // 右移動
-        // =========================
-        else if (cursors.right.isDown) {
-
-            this.setVelocityX(this.moveSpeed);
-
-            // 右向き
-            this.setFlipX(false);
-
-        }
-
-        // =========================
-        // 停止
-        // =========================
-        else {
-
-            this.setVelocityX(0);
-
-        }
-
-        // =========================
-        // ジャンプ
-        // =========================
-        if (
-            cursors.up.isDown &&
-            this.isGrounded()
-        ) {
-
-            this.setVelocityY(-this.jumpPower);
-            this.scene.events.emit('playerjump');
-        }
-
+        
         // =========================
         // 画面外判定
         // =========================
@@ -104,6 +68,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
         }
     }
+    
 
     // =========================
     // ダメージ処理

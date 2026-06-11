@@ -48,10 +48,20 @@ export default class GameScene extends Phaser.Scene {
 
     imageLoader(){
         // 全ステージで使う画像をロード
-        this.load.image("player", "asset/takigawa/player.png");
-        this.load.image("noda", "asset/noda/noda.png");
-        this.load.image("yoshida", "asset/yoshida/yoshida.png");
-        this.load.image("rowley", "asset/rowley/rowley.png");
+        this.load.spritesheet("player", "asset/takigawa/takigawaWalk10.png", {
+            frameWidth: 597,
+            frameHeight: 592
+        });
+
+        this.load.spritesheet("noda", "asset/noda/noda.png", {
+            frameWidth: 100,
+            frameHeight: 128
+        });
+        this.load.image("yoshida", "asset/yoshida/yoshida01.png");
+        this.load.image("yoshida-walk-2", "asset/yoshida/animation/yoshidaWalk02.png");
+        this.load.image("yoshida-walk-3", "asset/yoshida/animation/yoshidaWalk03.png");
+        this.load.image("yoshida-walk-4", "asset/yoshida/animation/yoshidaWalk04.png");
+        this.load.image("rowley", "asset/rowley/rowleyWalking.png");
         // ※ もしground画像を用意した場合は、ここでロードしてください。
         // 例: this.load.image("ground", "asset/ground.png");
         this.load.image("shimba", "asset/shimba/shimba.png");
@@ -65,8 +75,8 @@ export default class GameScene extends Phaser.Scene {
         this.load.image("halo","asset/jousisu/halo.png");
         this.load.image("baneNormall","asset/item/baneNormall.png");
         this.load.image("baneStomp","asset/item/baneStomp.png");
-        this.load.image("ueno","asset/ueno/ueno.png");
-        this.load.image("bullet","asset/ueno/bullet.png");
+        this.load.image("ueno", "asset/ueno/ueno.png");
+        this.load.image("bullet", "asset/ueno/bullet.png");
         this.load.image("stage3BG","asset/BackGround/Stage3BackGround.png");
         console.log("[preload] 画像アセットのロードを予約しました(yoshida含む)");
     }
@@ -164,6 +174,7 @@ export default class GameScene extends Phaser.Scene {
 
         // 1. ステージ読込
         this.loadStageData();
+        this.createEnemyTextureFrames();
 
         // 2. 地形生成
         this.createGround();
@@ -470,6 +481,18 @@ export default class GameScene extends Phaser.Scene {
 
     createBossLaser() {
         this.lasers = this.physics.add.group();
+    }
+    
+    createEnemyTextureFrames() {
+        this.addTextureFrame("rowley", 0, 294, 284, 400, 600);
+        this.addTextureFrame("rowley", 1, 824, 284, 400, 600);
+    }
+
+    addTextureFrame(textureKey, frameKey, x, y, width, height) {
+        const texture = this.textures.get(textureKey);
+        if (!texture || texture.has(frameKey)) return;
+
+        texture.add(frameKey, 0, x, y, width, height);
     }
 
    // =====================================

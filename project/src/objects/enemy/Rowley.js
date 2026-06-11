@@ -1,11 +1,18 @@
 import EnemyBase from "./EnemyBase.js";
-import Phaser from "phaser";
+
 
 export default class Rowley extends EnemyBase {
 
     constructor(scene, x, y) {
 
-        super(scene, x, y, "rowley");
+        super(scene, x, y, "rowley", {
+            animation: {
+                frames: [0, 1, 0, 1],
+                frameRate: 6,
+            },
+            idleFrame: 0,
+            flipXWhenMovingRight: true,
+        });
 
         // =========================
         // 基本設定
@@ -13,8 +20,11 @@ export default class Rowley extends EnemyBase {
 
         this.speed = 300;
         this.attackPower = 100;
+        this.direction = -1;
 
-        this.setScale(1);
+        this.setFrame(0);
+        this.setDisplaySize(56, 92);
+        this.setBodyDisplaySize(42, 82);
 
         // =========================
         // 行動設定
@@ -376,9 +386,10 @@ export default class Rowley extends EnemyBase {
     // =========================
 
     update(player, time) {
+        super.update(player);
         // =========================
-// フェーズ切り替え
-// =========================
+        // フェーズ切り替え
+        // =========================
 
         if (time > this.phaseTimer) {
         
@@ -511,6 +522,9 @@ export default class Rowley extends EnemyBase {
             this.dashTimer = time + 3000;
 
             this.startDash(player);
+        }
+        if (!this.isDead) {
+            this.movement.moveWalker(this);
         }
     }
 }
