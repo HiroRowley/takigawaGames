@@ -1,9 +1,11 @@
 import Phaser from "phaser";
 import System from "./systems/System.js";
+//import RowleySystem from "./systems/RowleySystem.js";
 
 import TitleScene from "./scenes/TitleScene.js";
 import GameScene from "./scenes/GameScene.js";
 import ResultScene from "./scenes/ResultScene.js"; 
+//import BossScene from "./scenes/BossScene.js";
 
 const config = {
   type: System.CONFIG.TYPE, // System.jsから定数を読み込むように修正

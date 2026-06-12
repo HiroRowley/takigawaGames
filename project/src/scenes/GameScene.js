@@ -13,8 +13,7 @@ import Ueno from "../objects/enemy/Ueno.js";
 
 import Isu from "../objects/items/Isu.js";
 
-import Timer from "../timer/Timer.js"
-import RowleySystem from "../systems/RowleySystem.js";
+import Timer from "../timer/Timer.js";
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
@@ -44,105 +43,95 @@ export default class GameScene extends Phaser.Scene {
     }
 
     create() {
-    this.grounds = this.physics.add.staticGroup();
-    this.enemies = this.physics.add.group();
-    this.traps = this.physics.add.group();
-    this.bullets = this.physics.add.group();
-    this.isus = this.physics.add.group();
+        this.grounds = this.physics.add.staticGroup();
+        this.enemies = this.physics.add.group();
+        this.traps = this.physics.add.group();
+        this.bullets = this.physics.add.group();
+        this.isus = this.physics.add.group();
 
-    this.canMove = true;
-    this.isSleeping = false;
+        this.canMove = true;
+        this.isSleeping = false;
 
-    this.sleepCount = 0;
-    this.boss = null;
-    this.lateCount = 0;
+        this.sleepCount = 0;
+        this.boss = null;
+        this.lateCount = 0;
 
-    this.loadStageData();
+        this.loadStageData();
 
-    this.createGround();
-    this.createPlayer();
-    this.createIsu();
+        this.createGround();
+        this.createPlayer();
+        this.createIsu();
 
-    this.setupCollisions();
+        this.setupCollisions();
 
-    this.timer = new Timer(this, 30);
-
-    this.timer.start();
-    this.rowleySystem = new RowleySystem(this);
-}
+        this.timer = new Timer(this, 30);
+        this.timer.start();
+    }
 
     // =========================
-    // プレイヤー
+    // ★ここが追加：ステージクリア処理
+    // =========================
+    clearStage() {
+        if (this.clearing) return;
+        this.clearing = true;
+
+        this.canMove = false;
+
+        // ★画面を白くフェードアウト
+        this.cameras.main.fadeOut(2000, 255, 255, 255);
+
+        this.cameras.main.once("camerafadeoutcomplete", () => {
+            this.scene.start("GameScene", {
+            stageNumber: this.stageNumber + 1
+            });
+        });
+    }
+
     // =========================
     createPlayer() {
-    const px = this.getPixelX(this.playerSpawn.x);
-    const py = this.getPixelY(this.playerSpawn.y);
+        const px = this.getPixelX(this.playerSpawn.x);
+        const py = this.getPixelY(this.playerSpawn.y);
 
-    this.player = new Player(this, px, py);
-    this.cursors = this.input.keyboard.createCursorKeys();
+        this.player = new Player(this, px, py);
+        this.cursors = this.input.keyboard.createCursorKeys();
 
-    this.player.setCollideWorldBounds(true);
-}
+        this.player.setCollideWorldBounds(true);
+    }
 
-    // =========================
-    // 椅子
-    // =========================
     createIsu() {
-    const list = this.stageData.isuList || [];
+        const list = this.stageData.isuList || [];
 
-    list.forEach(pos => {
-        const isu = new Isu(
-            this,
-            this.getPixelX(pos.x),
-            this.getPixelY(pos.y),
-            "isu"
-        );
+        this.isuObjects = [];
 
-        isu.body.setSize(46, 77);
-        isu.body.setOffset(0, 20);
+        list.forEach(pos => {
+            const isu = new Isu(
+                this,
+                this.getPixelX(pos.x),
+                this.getPixelY(pos.y),
+                "isu"
+            );
 
-        // ❌ this.isus.add(isu) は一旦やめる
-        this.isuObjects = this.isuObjects || [];
-        this.isuObjects.push(isu);
-    });
-}
+            isu.body.setSize(46, 77);
+            isu.body.setOffset(0, 20);
 
-    //地面
+            this.isuObjects.push(isu);
+        });
+    }
 
     createGround() {
-    this.groundList = this.stageData.groundList || [];
+        this.groundList = this.stageData.groundList || [];
 
-    this.groundList.forEach(pos => {
-        const px = this.getPixelX(pos.x);
-        const py = this.getPixelY(pos.y);
+        this.groundList.forEach(pos => {
+            const px = this.getPixelX(pos.x);
+            const py = this.getPixelY(pos.y);
 
-        const ground = this.add.rectangle(px, py, this.TILE, this.TILE, 0x654321);
+            const ground = this.add.rectangle(px, py, this.TILE, this.TILE, 0x654321);
 
-        this.physics.add.existing(ground, true); // ★static化
-        this.grounds.add(ground);
-    });
-}
-//     createGround() {
-//     this.groundList = this.stageData.groundList || [];
+            this.physics.add.existing(ground, true);
+            this.grounds.add(ground);
+        });
+    }
 
-//     this.groundList.forEach(pos => {
-//         const px = this.getPixelX(pos.x);
-//         const py = this.getPixelY(pos.y);
-
-//         const ground = this.physics.add.staticImage(px, py, null);
-
-//         ground.displayWidth = this.TILE;
-//         ground.displayHeight = this.TILE;
-
-//         ground.refreshBody(); // ←これ超重要
-
-//         this.grounds.add(ground);
-//     });
-// }
-
-    // =========================
-    // ステージ
-    // =========================
     loadStageData() {
         const map = {
             1: Stage1,
@@ -154,14 +143,13 @@ export default class GameScene extends Phaser.Scene {
 
         this.TILE = this.stageData.TILE || 64;
         this.playerSpawn = this.stageData.playerSpawn;
-        this.goalData = this.stageData.goal;
 
-         if (!this.stageData.isuList) {
-        this.stageData.isuList = [
-            { x: 10, y: 18 },
-            { x: 25, y: 18 },
-        ];
-    }
+        if (!this.stageData.isuList) {
+            this.stageData.isuList = [
+                { x: 10, y: 18 },
+                { x: 25, y: 18 },
+            ];
+        }
     }
 
     getPixelX(x) {
@@ -172,150 +160,64 @@ export default class GameScene extends Phaser.Scene {
         return y * this.TILE + this.TILE / 2;
     }
 
-    // =========================
-    // コライダー
-    // =========================
     setupCollisions() {
+        this.physics.add.collider(this.player, this.grounds);
 
-    this.physics.add.collider(this.player, this.grounds);
+        this.physics.add.overlap(this.player, this.isuObjects, (player, isu) => {
 
-    this.physics.add.overlap(this.player, this.isuObjects, (player, isu) => {
+            if (!isu.active) return;
+            if (this.isSleeping) return;
 
-        if (!isu.active) return;
+            this.isSleeping = true;
+            this.canMove = false;
 
-        const ix = isu.x;
-        const iy = isu.y;
+            const ix = isu.x;
+            const iy = isu.y;
 
-        const px = player.x;
-        const py = player.y;
+            const sleep = this.add.image(ix, iy, "player_sleep");
+            sleep.setOrigin(0.5, 1);
+            sleep.setScale(0.1);
 
-        // 二重発動防止
-        if (this.isSleeping) return;
-        this.isSleeping = true;
+            player.setVisible(false);
+            player.body.enable = false;
 
-        this.canMove = false;
+            isu.setVisible(false);
+            isu.body.enable = false;
 
-        // =========================
-        // ★追加：睡眠カウント＆ボス処理
-        // =========================
-        this.sleepCount = (this.sleepCount || 0) + 1;
-        this.lateCount = this.lateCount || 0;
+            this.time.delayedCall(3000, () => {
 
-        if (this.sleepCount % 3 === 0) {
+                sleep.destroy();
 
-            this.lateCount++;
+                isu.setPosition(ix, iy);
+                isu.setVisible(true);
+                isu.body.enable = true;
 
-            if (!this.boss) {
-                this.boss = this.add.image(
-                    this.player.x,
-                    this.player.y - 200,
-                    "boss"
-                );
+                player.setPosition(ix, iy);
+                player.setVisible(true);
+                player.body.enable = true;
 
-                this.boss.setScale(0.5);
-                this.boss.setDepth(1000);
+                this.canMove = true;
+                this.isSleeping = false;
+            });
 
-                // =========================
-                // ★コメント表示（0.5秒後）
-                // =========================
-                this.time.delayedCall(500, () => {
-                    this.lateText = this.add.text(
-                        this.cameras.main.centerX,
-                        this.cameras.main.height - 80,
-                        "滝川さんは眠ってしまった、、、\n上司に怒られて、遅刻確定、",
-                        {
-                            fontSize: "24px",
-                            color: "#ffffff",
-                            backgroundColor: "rgba(0,0,0,0.6)",
-                            padding: { x: 10, y: 10 },
-                        }
-                    );
+            // =========================
+            // ★一定回数でステージクリア（例）
+            // =========================
+            this.sleepCount = (this.sleepCount || 0) + 1;
 
-                    this.lateText.setOrigin(0.5, 0.5);
-                    this.lateText.setDepth(2000);
-                });
-
-                // =========================
-                // ★boss削除（5秒後）
-                // =========================
-                this.time.delayedCall(5000, () => {
-                    if (this.boss) {
-                        this.boss.destroy();
-                        this.boss = null;
-                    }
-
-                    if (this.lateText) {
-                        this.lateText.destroy();
-                        this.lateText = null;
-                    }
+            if (this.sleepCount >= 5) {
+                this.time.delayedCall(1000, () => {
+                    this.clearStage();
                 });
             }
-
-            console.log("遅刻発生:", this.lateCount);
-        }
-
-        // =========================
-        // ① その場で即sleep表示
-        // =========================
-        const sleep = this.add.image(ix, iy, "player_sleep");
-        sleep.setOrigin(0.5, 1);
-        sleep.setScale(0.1);
-
-        player.setVisible(false);
-        player.body.enable = false;
-
-        isu.setVisible(false);
-        isu.body.enable = false;
-
-        // =========================
-        // ② 3秒後に復帰
-        // =========================
-        this.time.delayedCall(3000, () => {
-
-            sleep.destroy();
-
-            isu.setPosition(ix, iy);
-            isu.setVisible(true);
-            isu.body.enable = true;
-
-            const offsetX = isu.displayWidth * 0.3;
-
-            player.setPosition(ix + offsetX, iy);
-            player.setVisible(true);
-            player.body.enable = true;
-
-            this.canMove = true;
-            this.isSleeping = false;
         });
-    });
-}
-
-    createSleepPlayers() {
-    const list = this.stageData.playerSleepList || [];
-
-    list.forEach(pos => {
-        const sleep = this.add.image(
-            this.getPixelX(pos.x),
-            this.getPixelY(pos.y),
-            "player_sleep"
-        );
-
-        sleep.setVisible(false);
-        sleep.setDepth(10);
-
-        this.playerSleepGroup.add(sleep);
-    });
-}
-
-    update(time, delta) {
-    if (this.player?.update) {
-        this.player.update(this.cursors, this.canMove);
     }
 
-    this.timer?.update();
+    update(time, delta) {
+        if (this.player?.update) {
+            this.player.update(this.cursors, this.canMove);
+        }
 
-    this.rowleySystem.update(time, delta);
-}
-
-
+        this.timer?.update();
+    }
 }
