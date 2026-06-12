@@ -375,6 +375,7 @@ export default class GameScene extends Phaser.Scene {
         this.groundDecorationList = [
             ...(this.stageData.pipeList || []).map(pipe => ({
                 texture: "pipe",
+                depth: 10,
                 ...pipe
             })),
             ...(this.stageData.groundDecorationList || [])
