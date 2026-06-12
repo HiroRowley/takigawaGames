@@ -861,6 +861,14 @@ export default class GameScene extends Phaser.Scene {
         const nextStage = this.stageNumber + 1;
         console.log(`[SceneTransition] ステージクリア！ 次のステージ: ${nextStage}`);
 
+        //エンディングへ
+        if (this.stageNumber === 3) {
+            console.log("ステージ3クリア → エンディングへ");
+
+            this.scene.start("StageClearTransitionScene");
+            return;
+        }
+
         if (nextStage > 3) {
             console.log("[SceneTransition] 全ステージクリア。ResultSceneへ遷移します。");
             this.scene.start("ResultScene", { clear: true }); 
