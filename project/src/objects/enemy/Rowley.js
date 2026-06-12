@@ -23,7 +23,7 @@ export default class Rowley extends EnemyBase {
         this.speed = 300;
         this.attackPower = 100;
 
-        this.setScale(1);
+        this.setDisplaySize(128,168);
 
         // =========================
         // 行動設定

@@ -99,7 +99,7 @@ const Stage1 = {
   // 敵 (画像内の黒丸の位置)
   enemySpawnList: [
     { x: 17, y: 19, type: "noda" },     // 1体目のnoda (x:21, y:7付近)
-    { x: 29, y: 14, type: "shimba" },     // 2体目のnoda (x:28, y:7付近)
+    { x: 29, y: 15, type: "shimba" },     // 2体目のnoda (x:28, y:7付近)
     { x: 33, y: 15, type: "yoshida" },    // 右下のueno (x:42, y:29付近)
   ],
 

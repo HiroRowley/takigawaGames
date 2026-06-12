@@ -117,7 +117,7 @@ export default class GameScene extends Phaser.Scene {
         const types = [
             "noda",
             "yoshida",
-            "ueno"
+            
         ];
 
         const type =
@@ -220,7 +220,7 @@ export default class GameScene extends Phaser.Scene {
                 fontSize: "28px",
                 color: "#ffffff",
                 stroke: "#000000",
-                strokeThickness: 4
+                strokeThickness: 5
             }
         );
 
@@ -529,7 +529,7 @@ export default class GameScene extends Phaser.Scene {
                     enemy.setCustomConfig(pos.bulletTexture, pos.fireAngle);
                     break;
                 case "rowley":
-                case "Rowley":
+                
                     enemy = new Rowley(this, px, py);
                     break;
 
