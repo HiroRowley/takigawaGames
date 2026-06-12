@@ -119,7 +119,7 @@ export default class GameScene extends Phaser.Scene {
 
         const types = [
             "noda",
-            "yoshida",
+            
             
         ];
 
@@ -162,8 +162,8 @@ export default class GameScene extends Phaser.Scene {
     // create
     // =====================================
     create() {
-        this.physics.world.drawDebug = true;
-    this.physics.world.createDebugGraphic();
+        //this.physics.world.drawDebug = true;
+        //this.physics.world.createDebugGraphic();
         if (this.stageNumber === 3) {
 
         // 画像背景
@@ -1021,59 +1021,59 @@ export default class GameScene extends Phaser.Scene {
         this.updateUI();
     }
         spawnGoalAndBlocks() {
-        
+
         console.log(
             "[Event] 30秒経過！社員証（ゴール）がゆっくり降ってきます！"
         );
-    
+
         const dropX = this.getPixelX(23);
         const targetY = 370;
         const startY = -100;
-    
+
         const syainsyo =
             this.add.image(
                 dropX,
                 startY,
                 "syainsyo"
             );
-        
+
         syainsyo.setDisplaySize(64, 64);
         syainsyo.setDepth(1000);
-        
+
         this.tweens.add({
             targets: syainsyo,
             y: targetY,
             duration: 4500,
             ease: "Power2",
-        
+
             onComplete: () => {
-            
+
                 console.log(
                     "[Goal] 到着！取得判定を有効にします。"
                 );
-            
+
                 this.physics.add.existing(
                     syainsyo,
                     true
                 );
-            
+
                 this.physics.add.overlap(
                     this.player,
                     syainsyo,
-                
+
                     () => {
-                    
+
                         if (this.isClearing) {
                             return;
                         }
-                    
+
                         this.isClearing = true;
-                    
+
                         syainsyo.destroy();
-                    
+
                         this.nextStage();
                     },
-                
+
                     null,
                     this
                 );

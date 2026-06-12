@@ -173,14 +173,14 @@ const Stage1 = {
     },
     {
       x: 42.5,
-      y: 6,
+      y: 7,
       type: "itemBlock",
       itemType: "empty",
       hidden: true
     },
     {
       x: 41.5,
-      y: 6,
+      y: 7,
       type: "itemBlock",
       itemType: "empty",
       hidden: true
@@ -225,7 +225,7 @@ const Stage1 = {
 
     {
       x: 40.5,
-      y: 6,
+      y: 7,
       type: "itemBlock",
       itemType: "jousisu"
     }
