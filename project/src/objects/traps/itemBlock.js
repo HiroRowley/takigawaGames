@@ -1,19 +1,22 @@
-
 import TrapBase from "./TrapBase.js";
 
 export default class ItemBlock extends TrapBase {
 
-        constructor(scene, x, y, type = "empty") {
+    constructor(scene, x, y, type = "empty", hidden = false) {
 
         super(scene, x, y, "itemBlock");
+
+        this.hidden = hidden;
 
         this.type = type;
 
         this.used = false;
 
-        this.setOrigin(0.5);
+        this.setOrigin(0,0);
 
-        this.setDisplaySize(64, 64);
+        this.setDisplaySize(32, 32);
+        this.body.setOffset(0, 0);
+        
 
         // =========================
         // 完全固定
@@ -28,6 +31,22 @@ export default class ItemBlock extends TrapBase {
         this.body.immovable = true;
 
         this.body.pushable = false;
+
+        // =========================
+        // 隠しブロック
+        // =========================
+
+        if (this.hidden) {
+
+            // 非表示
+            this.setVisible(false);
+
+            // 当たり判定だけ透過
+            this.body.checkCollision.up = false;
+            this.body.checkCollision.down = true;
+            this.body.checkCollision.left = false;
+            this.body.checkCollision.right = false;
+        }
     }
 
     // =====================================
@@ -36,6 +55,24 @@ export default class ItemBlock extends TrapBase {
 
     hit(player) {
 
+        // =========================
+        // 隠し解除
+        // =========================
+
+        if (this.hidden) {
+
+            this.hidden = false;
+
+            // 表示
+            this.setVisible(true);
+
+            // collision復活
+            this.body.checkCollision.up = true;
+            this.body.checkCollision.down = true;
+            this.body.checkCollision.left = true;
+            this.body.checkCollision.right = true;
+        }
+
         // 使用済みなら無視
         if (this.used) {
             return;
@@ -43,7 +80,10 @@ export default class ItemBlock extends TrapBase {
 
         this.used = true;
 
-        // 少し揺らす
+        // =========================
+        // ブロックアニメ
+        // =========================
+
         this.scene.tweens.add({
 
             targets: this,
@@ -75,7 +115,6 @@ export default class ItemBlock extends TrapBase {
         }
 
         // 使用済み画像
-        // 必要なら usedBlock を preload
         // this.setTexture("usedBlock");
     }
 
@@ -151,6 +190,7 @@ export default class ItemBlock extends TrapBase {
         // =========================
         // 神BGM
         // =========================
+
         scene.sound.stopAll();
 
         scene.sound.play("holyMusic");
@@ -208,13 +248,13 @@ export default class ItemBlock extends TrapBase {
             // ゆっくり降下
             scene.tweens.add({
 
-            targets: boss,
+                targets: boss,
 
-            y: this.y - 80,
+                y: this.y - 80,
 
-            duration: 3500,
+                duration: 3500,
 
-            ease: "Sine.easeInOut",
+                ease: "Sine.easeInOut",
 
                 onUpdate: () => {
 
@@ -223,8 +263,6 @@ export default class ItemBlock extends TrapBase {
                     halo.y = boss.y;
                 }
             });
-
-
 
             // =========================
             // 着地
@@ -237,16 +275,12 @@ export default class ItemBlock extends TrapBase {
                     0.02
                 );
 
-                // impact を preload しているなら
-                // scene.sound.play("impact");
-
                 // 遅刻状態
                 player.isLate = true;
 
                 console.log(
                     "上司が降臨した"
                 );
-                
 
                 // =========================
                 // 終了
@@ -259,6 +293,7 @@ export default class ItemBlock extends TrapBase {
                     halo.destroy();
 
                     boss.destroy();
+
                     player.emit("late");
 
                     player.canMove = true;
@@ -268,4 +303,3 @@ export default class ItemBlock extends TrapBase {
         });
     }
 }
-
