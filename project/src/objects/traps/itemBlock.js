@@ -12,9 +12,11 @@ export default class ItemBlock extends TrapBase {
 
         this.used = false;
 
-        this.setOrigin(0.5);
+        this.setOrigin(0,0);
 
-        this.setDisplaySize(64, 64);
+        this.setDisplaySize(32, 32);
+        this.body.setOffset(0, 0);
+        
 
         // =========================
         // 完全固定

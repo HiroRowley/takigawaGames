@@ -98,6 +98,7 @@ export default class GameScene extends Phaser.Scene {
         this.load.audio("laser","asset/sounds/laser.mp3");
 
     }
+    
 
     spawnRandomEnemy() {//Rowley
 
@@ -159,6 +160,8 @@ export default class GameScene extends Phaser.Scene {
     // create
     // =====================================
     create() {
+        this.physics.world.drawDebug = true;
+    this.physics.world.createDebugGraphic();
         if (this.stageNumber === 3) {
 
         // 画像背景
@@ -475,6 +478,8 @@ export default class GameScene extends Phaser.Scene {
 
             ground.refreshBody();
 
+            
+
             this.grounds.add(ground);
         });
         console.log("createGround切り分け",this.grounds.getChildren().length);
@@ -741,19 +746,22 @@ export default class GameScene extends Phaser.Scene {
 
     this.blocks,
 
-    (player, block) => {
+        (player, block) => {
 
         if (!block.hidden) {
             return;
         }
 
-        // 下から接近中
+        const bodyP = player.body;
+        const bodyB = block.body;
+
+        // 下からぶつかった瞬間だけ
         const hitFromBelow =
-            player.body.velocity.y < 0 &&
-            player.body.top > block.body.bottom - 20;
+            bodyP.velocity.y < 0 &&
+            bodyP.touching.up &&
+            bodyB.touching.down;
 
         if (hitFromBelow && block.hit) {
-
             block.hit(player);
         }
     }

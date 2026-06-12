@@ -28,7 +28,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.isInvincible = false;
         this.canMove = true;
         this.setDisplaySize(64, 64);
-        this.setOrigin(0.5, 0.5);
+        this.setOrigin(0,0);
+        // 当たり判定
+        this.body.setSize(200, 450);
+        this.body.setOffset(200, 100);
 
         // 摩擦（必要なら有効化）
         // this.setDragX(600);

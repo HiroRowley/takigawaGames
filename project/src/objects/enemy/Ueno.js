@@ -13,6 +13,9 @@ export default class Ueno extends EnemyBase {
         this.attackPower = 1; // 本体に触れてもダメージ
         this.setDisplaySize(100, 150);
 
+        this.body.setSize(500, 1150);
+        this.body.setOffset(350, 100);
+
         if (this.body) {
             this.body.setAllowGravity(false); // 空中砲台もできるように重力オフ
             this.body.setImmovable(true);     // プレイヤーがぶつかっても位置がズレないように固定
