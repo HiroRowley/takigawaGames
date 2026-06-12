@@ -19,6 +19,7 @@ import Ueno from "../objects/enemy/Ueno.js";
 
 import Reihuuki from "../objects/traps/reihuuki.js";
 import Bane from "../objects/traps/bane.js";
+import Timer from "../timer/Timer.js";
 
 export default class GameScene extends Phaser.Scene {
 
@@ -79,6 +80,7 @@ export default class GameScene extends Phaser.Scene {
         this.load.image("bullet","asset/ueno/bullet.png");
         this.load.image("stage3BG","asset/BackGround/Stage3BackGround.png");
         this.load.image("rock", "asset/stageGround/rock.png");
+        this.load.image("syainsyo", "asset/syainsyo/syainsyo.jpg");
         console.log("[preload] 画像アセットのロードを予約しました(yoshida含む)");
     }
     soundLoader() {
@@ -208,6 +210,14 @@ export default class GameScene extends Phaser.Scene {
         this.createTraps();
         this.createGoal();
         this.createSound();
+        if (this.stageNumber === 3) {
+            this.timer = new Timer(this, 30); // 30秒タイマー
+            
+            // 30秒耐えきった時の処理
+            this.timer.onTimeUp(() => {
+                this.spawnGoalAndBlocks(); // ゴールを降下させるメソッドを呼ぶ
+            });
+        }
         
         // 4. コライダー（当たり判定）設定
         this.setupCollisions();
@@ -250,6 +260,7 @@ export default class GameScene extends Phaser.Scene {
         this.updateUI();
 
         this.isGameOver = false;
+        this.isClearing = false;
         
         console.log("[create] シーンの初期構築がすべて完了しました。");
     }
@@ -267,6 +278,7 @@ export default class GameScene extends Phaser.Scene {
     this.gameoverSound = this.sound.add("gameoverSound");
     this.baneSound = this.sound.add("bane");
     this.hitSound = this.sound.add("hit");
+    this.isClearing = false;
 
     // =========================
     // ステージ別BGM
@@ -925,12 +937,14 @@ export default class GameScene extends Phaser.Scene {
         const nextStage = this.stageNumber + 1;
         console.log(`[SceneTransition] ステージクリア！ 次のステージ: ${nextStage}`);
 
+        // もし全ステージクリア（例: 3ステージ目終了）なら ClearScene へ
         if (nextStage > 3) {
-            console.log("[SceneTransition] 全ステージクリア。ResultSceneへ遷移します。");
-            this.scene.start("ResultScene", { clear: true });
+            console.log("[SceneTransition] 全ステージクリア。ClearSceneへ遷移します。");
+
+            // ここで ClearScene を呼び出す
+            this.scene.start("ClearScene", { clear: true }); 
             return;
         }
-
         DataManager.setCurrentStage(nextStage);
         this.scene.start("GameScene", { stageNumber: nextStage });
     }
@@ -941,6 +955,9 @@ export default class GameScene extends Phaser.Scene {
         update(time, delta) {
             if (this.isGameOver) {
                 return; 
+            }
+            if (this.timer) {
+                this.timer.update();
             }
             console.log("プレイヤーの高さ",this.player.y);
 
@@ -1000,6 +1017,67 @@ export default class GameScene extends Phaser.Scene {
                 this.bullets.remove(bullet, true, true);
             }
         });
+        
         this.updateUI();
+    }
+        spawnGoalAndBlocks() {
+        
+        console.log(
+            "[Event] 30秒経過！社員証（ゴール）がゆっくり降ってきます！"
+        );
+    
+        const dropX = this.getPixelX(23);
+        const targetY = 370;
+        const startY = -100;
+    
+        const syainsyo =
+            this.add.image(
+                dropX,
+                startY,
+                "syainsyo"
+            );
+        
+        syainsyo.setDisplaySize(64, 64);
+        syainsyo.setDepth(1000);
+        
+        this.tweens.add({
+            targets: syainsyo,
+            y: targetY,
+            duration: 4500,
+            ease: "Power2",
+        
+            onComplete: () => {
+            
+                console.log(
+                    "[Goal] 到着！取得判定を有効にします。"
+                );
+            
+                this.physics.add.existing(
+                    syainsyo,
+                    true
+                );
+            
+                this.physics.add.overlap(
+                    this.player,
+                    syainsyo,
+                
+                    () => {
+                    
+                        if (this.isClearing) {
+                            return;
+                        }
+                    
+                        this.isClearing = true;
+                    
+                        syainsyo.destroy();
+                    
+                        this.nextStage();
+                    },
+                
+                    null,
+                    this
+                );
+            }
+        });
     }
 }
