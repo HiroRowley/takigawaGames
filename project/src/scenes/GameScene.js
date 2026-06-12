@@ -16,6 +16,8 @@ import Shimba from "../objects/enemy/Shimba.js";
 import Rowley from "../objects/enemy/Rowley.js";
 import ItemBlock from "../objects/traps/itemBlock.js";
 import Ueno from "../objects/enemy/Ueno.js"
+// GameScene.js の19行目を修正
+import Timer from "../timer/Timer.js";
 
 import Reihuuki from "../objects/traps/reihuuki.js";
 import Bane from "../objects/traps/bane.js";
@@ -69,6 +71,8 @@ export default class GameScene extends Phaser.Scene {
         this.load.image("bullet","asset/ueno/bullet.png");
         this.load.image("stage3BG","asset/BackGround/Stage3BackGround.png");
         this.load.image("rock", "asset/stageGround/rock.png");
+        this.load.image("syainsyo", "asset/syainsyo/syainsyo.jpg");
+
         console.log("[preload] 画像アセットのロードを予約しました(yoshida含む)");
     }
     soundLoader(){
@@ -186,6 +190,16 @@ export default class GameScene extends Phaser.Scene {
         this.createTraps();
         this.createGoal();
         this.createSound();
+
+        // ▼ ここに追加：ステージ3ならタイマーをセット
+        if (this.stageNumber === 3) {
+            this.timer = new Timer(this, 30); // 30秒タイマー
+            
+            // 30秒耐えきった時の処理
+            this.timer.onTimeUp(() => {
+                this.spawnGoalAndBlocks(); // ゴールを降下させるメソッドを呼ぶ
+            });
+        }
         
         // 4. コライダー（当たり判定）設定
         this.setupCollisions();
@@ -228,6 +242,8 @@ export default class GameScene extends Phaser.Scene {
         this.updateUI();
 
         this.isGameOver = false;
+
+        this.isClearing = false; // ★ここを追加
         
         console.log("[create] シーンの初期構築がすべて完了しました。");
     }
@@ -242,7 +258,7 @@ export default class GameScene extends Phaser.Scene {
     this.gameoverSound = this.sound.add("gameoverSound");
     this.baneSound = this.sound.add("bane");
     this.hitSound = this.sound.add("hit");
-
+    this.isClearing = false; // ★ここを追加
     // =========================
     // ステージ別BGM
     // =========================
@@ -856,20 +872,24 @@ export default class GameScene extends Phaser.Scene {
     // =====================================
     // 次ステージ / クリア判定
     // =====================================
-    nextStage() {
-        this.sound.stopAll();
-        const nextStage = this.stageNumber + 1;
-        console.log(`[SceneTransition] ステージクリア！ 次のステージ: ${nextStage}`);
+   nextStage() {
+    this.sound.stopAll();
+    const nextStage = this.stageNumber + 1;
+    console.log(`[SceneTransition] ステージクリア！ 次のステージ: ${nextStage}`);
 
-        if (nextStage > 3) {
-            console.log("[SceneTransition] 全ステージクリア。ResultSceneへ遷移します。");
-            this.scene.start("ResultScene", { clear: true }); 
-            return;
-        }
-
-        DataManager.setCurrentStage(nextStage);
-        this.scene.start("GameScene", { stageNumber: nextStage });
+    // もし全ステージクリア（例: 3ステージ目終了）なら ClearScene へ
+    if (nextStage > 3) {
+        console.log("[SceneTransition] 全ステージクリア。ClearSceneへ遷移します。");
+        
+        // ここで ClearScene を呼び出す
+        this.scene.start("ClearScene", { clear: true }); 
+        return;
     }
+
+    // 途中ステージなら次の GameScene へ
+    DataManager.setCurrentStage(nextStage);
+    this.scene.start("GameScene", { stageNumber: nextStage });
+}
 
     // =====================================
     // update
@@ -878,6 +898,12 @@ export default class GameScene extends Phaser.Scene {
             if (this.isGameOver) {
                 return; 
             }
+
+            // ▼ ここに追加：タイマーの更新
+        if (this.timer) {
+            this.timer.update();
+        }
+
             console.log("プレイヤーの高さ",this.player.y);
 
         // =========================
@@ -937,5 +963,50 @@ export default class GameScene extends Phaser.Scene {
             }
         });
         this.updateUI();
+    }
+
+    // =====================================
+    // 30秒経過時のイベント（社員証を降らせる）
+    // =====================================
+    spawnGoalAndBlocks() {
+        console.log("[Event] 30秒経過！社員証（ゴール）がゆっくり降ってきます！");
+
+        // 1. 座標の設定
+        const dropX = this.getPixelX(23); 
+        const targetY = 370; // ここに静止させたいY座標を指定してください
+        const startY = -100; 
+
+        // 2. 物理演算を使わず、単なる画像として生成
+        const syainsyo = this.add.image(dropX, startY, "syainsyo");
+        syainsyo.setDisplaySize(64, 64);
+        syainsyo.setDepth(1000); // UIより手前に表示
+
+        // 3. Tweenアニメーションでゆっくり降ろして止める
+        this.tweens.add({
+            targets: syainsyo,
+            y: targetY,
+            duration: 4500,        // 2.5秒かけてゆっくり降下（数値を増やすとさらに遅くなる）
+            ease: 'Power2',        // 加速・減速の曲線（Power1〜3で調整可能）
+            onComplete: () => {
+                console.log("[Goal] 到着！取得判定を有効にします。");
+
+                // 到着した瞬間に、物理体を有効化して重なり判定を付ける
+                this.physics.add.existing(syainsyo, true);
+
+                // 5. プレイヤーと社員証の重なり（取得）判定
+                this.physics.add.overlap(
+                    this.player,
+                    syainsyo,
+                    () => {
+                        if (this.isClearing) return;
+                        this.isClearing = true;
+                        syainsyo.destroy(); 
+                        this.nextStage();
+                    },
+                    null,
+                    this
+                );
+            }
+        });
     }
 }
