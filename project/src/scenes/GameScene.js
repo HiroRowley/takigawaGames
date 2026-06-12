@@ -68,6 +68,7 @@ export default class GameScene extends Phaser.Scene {
         this.load.image("shimba", "asset/shimba/shimba.png");
         this.load.image("dirt", "asset/stageGround/dirt.png");
         this.load.image("grass", "asset/stageGround/grass.png");
+        this.load.image("pipe", "asset/stageGround/pipe.png");
         this.load.image("reihuuki", "asset/reihuuki/reihuuki.png");
         this.load.image("reihuukiSpill", "asset/reihuuki/reihuukiSpillWater.png");
         this.load.image("itemBlock","asset/item/itemBlock.jpg");
@@ -371,6 +372,13 @@ export default class GameScene extends Phaser.Scene {
 
         // データが存在しないプロパティは空配列 [] で初期化
         this.groundList = this.stageData.groundList || [];
+        this.groundDecorationList = [
+            ...(this.stageData.pipeList || []).map(pipe => ({
+                texture: "pipe",
+                ...pipe
+            })),
+            ...(this.stageData.groundDecorationList || [])
+        ];
         this.blockList = this.stageData.blockList || [];
         this.hiddenBlockList = this.stageData.hiddenBlockList || [];
         this.enemySpawnList = this.stageData.enemySpawnList || [];
@@ -441,6 +449,23 @@ export default class GameScene extends Phaser.Scene {
 
         console.log(`[createGround] 地形生成開始`);
 
+        const hiddenGroundTiles = new Set();
+
+        this.groundDecorationList.forEach(decoration => {
+            if (decoration.hideGroundTiles === false) {
+                return;
+            }
+
+            const width = decoration.width || 1;
+            const height = decoration.height || 1;
+
+            for (let y = decoration.y; y < decoration.y + height; y++) {
+                for (let x = decoration.x; x < decoration.x + width; x++) {
+                    hiddenGroundTiles.add(`${x},${y}`);
+                }
+            }
+        });
+
         this.groundList.forEach(pos => {
 
             const px = this.getPixelX(pos.x);
@@ -490,9 +515,39 @@ export default class GameScene extends Phaser.Scene {
 
             ground.refreshBody();
 
+            if (hiddenGroundTiles.has(`${pos.x},${pos.y}`)) {
+                ground.setVisible(false);
+            }
+
             
 
             this.grounds.add(ground);
+        });
+
+        this.groundDecorationList.forEach(decoration => {
+            if (!decoration.texture) {
+                return;
+            }
+
+            const width = decoration.width || 1;
+            const height = decoration.height || 1;
+            const px = (decoration.x + width / 2) * this.TILE;
+            const py = (decoration.y + height / 2) * this.TILE;
+            const displayWidth = (decoration.displayWidth || width) * this.TILE;
+            const displayHeight = (decoration.displayHeight || height) * this.TILE;
+
+            const groundDecoration = this.add.image(
+                px,
+                py,
+                decoration.texture
+            );
+
+            groundDecoration.setDisplaySize(
+                displayWidth,
+                displayHeight
+            );
+
+            groundDecoration.setDepth(decoration.depth ?? 0);
         });
         console.log("createGround切り分け",this.grounds.getChildren().length);
         console.log("[createGround] 完了");
