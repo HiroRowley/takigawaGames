@@ -1121,7 +1121,19 @@ export default class GameScene extends Phaser.Scene {
     // =====================================
     nextStage() {
         this.sound.stopAll();
+        if (this._cleared) return;
+        this._cleared = true;
+
         const nextStage = this.stageNumber + 1;
+
+        if (this.stageNumber === 3) {
+            this.physics.pause();
+            this.input.enabled = false;
+            this.scene.launch("StageClearTransitionScene", {
+                next: "OfficeScene"
+            });
+            return;
+        }
         console.log(`[SceneTransition] ステージクリア！ 次のステージ: ${nextStage}`);
 
         // もし全ステージクリア（例: 3ステージ目終了）なら ClearScene へ
