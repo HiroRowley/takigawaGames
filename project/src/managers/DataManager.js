@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import System from "../systems/System.js";
 
-import GameScene from "../scenes/GameScene.js"
+import GameScene from "../scenes/GameScene/GameScene.js"
 
 /**
  * DataManager

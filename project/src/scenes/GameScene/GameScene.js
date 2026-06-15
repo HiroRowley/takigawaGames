@@ -1,26 +1,26 @@
 import Phaser from "phaser";
-import DataManager from "../managers/DataManager.js";
+import DataManager from "../../managers/DataManager.js";
 
 // ステージデータのインポート
-import Stage1 from "../stages/Stage1.js";
-import Stage2 from "../stages/Stage2.js";
-import Stage3 from "../stages/Stage3.js";
-import SampleStage from "../stages/SampleStage.js"
+import Stage1 from "../../stages/Stage1.js";
+import Stage2 from "../../stages/Stage2.js";
+import Stage3 from "../../stages/Stage3.js";
+import SampleStage from "../../stages/SampleStage.js"
 
-import Player from "../objects/Player.js";
-import Enemy from "../objects/enemy/EnemyBase.js";
-import Trap from "../objects/traps/TrapBase.js";
-import Noda from "../objects/enemy/Noda.js";
-import Yoshida from "../objects/enemy/Yoshida.js";
-import Shimba from "../objects/enemy/Shimba.js";
-import Rowley from "../objects/enemy/Rowley.js";
-import ItemBlock from "../objects/traps/itemBlock.js";
-import Ueno from "../objects/enemy/Ueno.js"
+import Player from "../../objects/Player.js";
+import Enemy from "../../objects/enemy/EnemyBase.js";
+import Trap from "../../objects/traps/TrapBase.js";
+import Noda from "../../objects/enemy/Noda.js";
+import Yoshida from "../../objects/enemy/Yoshida.js";
+import Shimba from "../../objects/enemy/Shimba.js";
+import Rowley from "../../objects/enemy/Rowley.js";
+import ItemBlock from "../../objects/traps/itemBlock.js";
+import Ueno from "../../objects/enemy/Ueno.js"
 // GameScene.js の19行目を修正
-import Timer from "../timer/Timer.js";
+import Timer from "../../timer/Timer.js";
 
-import Reihuuki from "../objects/traps/reihuuki.js";
-import Bane from "../objects/traps/bane.js";
+import Reihuuki from "../../objects/traps/reihuuki.js";
+import Bane from "../../objects/traps/bane.js";
 
 export default class GameScene extends Phaser.Scene {
 
@@ -246,6 +246,9 @@ export default class GameScene extends Phaser.Scene {
         this.isClearing = false; // ★ここを追加
         
         console.log("[create] シーンの初期構築がすべて完了しました。");
+    
+        //デバック用Gを押したらステージ３へ
+        this.debugKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.G);
     }
     createBane(){
         this.bane = new Bane(this,500,400);
@@ -873,23 +876,65 @@ export default class GameScene extends Phaser.Scene {
     // 次ステージ / クリア判定
     // =====================================
    nextStage() {
-    this.sound.stopAll();
-    const nextStage = this.stageNumber + 1;
-    console.log(`[SceneTransition] ステージクリア！ 次のステージ: ${nextStage}`);
 
-    // もし全ステージクリア（例: 3ステージ目終了）なら ClearScene へ
-    if (nextStage > 3) {
-        console.log("[SceneTransition] 全ステージクリア。ClearSceneへ遷移します。");
-        
-        // ここで ClearScene を呼び出す
-        this.scene.start("ClearScene", { clear: true }); 
-        return;
+        this.sound.stopAll();
+
+        if (this._cleared) return;
+        this._cleared = true;
+
+        const nextStage = this.stageNumber + 1;
+
+        console.log(`[SceneTransition] ステージクリア！ 次のステージ: ${nextStage}`);
+
+        // ----------------------------------------
+        // ■ 最終ステージ（ステージ3）クリア
+        // ----------------------------------------
+        if (this.stageNumber === 3) {
+
+            console.log("ステージ3クリア → エンディング演出へ");
+
+            this.physics.pause();
+            this.input.enabled = false;
+
+            // ★ここが重要：必ず演出に渡すだけ
+            this.scene.launch("StageClearTransitionScene", {
+                next: "OfficeScene"
+            });
+
+            return;
+        }
+
+        // ----------------------------------------
+        // ■ 全ステージクリア（念のため保険）
+        // ----------------------------------------
+        if (nextStage > 3) {
+
+            console.log("[SceneTransition] 全ステージクリア → ClearScene");
+
+            this.physics.pause();
+            this.input.enabled = false;
+
+            this.scene.launch("StageClearTransitionScene", {
+                next: "ClearScene",
+                data: { clear: true }
+            });
+
+            return;
+        }
+
+        // ----------------------------------------
+        // ■ 通常ステージ遷移
+        // ----------------------------------------
+        console.log("[SceneTransition] 次ステージへ");
+
+        this.physics.pause();
+        this.input.enabled = false;
+
+        this.scene.launch("StageClearTransitionScene", {
+            next: "GameScene",
+            data: { stageNumber: nextStage }
+        });
     }
-
-    // 途中ステージなら次の GameScene へ
-    DataManager.setCurrentStage(nextStage);
-    this.scene.start("GameScene", { stageNumber: nextStage });
-}
 
     // =====================================
     // update
@@ -897,6 +942,18 @@ export default class GameScene extends Phaser.Scene {
         update(time, delta) {
             if (this.isGameOver) {
                 return; 
+            }
+
+            // --- デバッグ用：Gキーでステージ3へ ---
+            if (this.debugKey.isDown) {
+            console.log("[Debug] Gキー入力：ステージ3へスキップします");
+            
+            // 音を止めて、ステージ3へ遷移
+            this.sound.stopAll();
+            DataManager.setCurrentStage(3);
+            this.scene.start("GameScene", { stageNumber: 3 });
+            return; // 即座に抜ける    }
+            // ------------------------------------// ...以降、既存の update 処理
             }
 
             // ▼ ここに追加：タイマーの更新
