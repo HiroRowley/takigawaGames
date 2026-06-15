@@ -20,6 +20,7 @@ import Ueno from "../objects/enemy/Ueno.js";
 import Reihuuki from "../objects/traps/reihuuki.js";
 import Bane from "../objects/traps/bane.js";
 import Timer from "../timer/Timer.js";
+import Cloud from "../objects/traps/cloud.js";
 
 export default class GameScene extends Phaser.Scene {
 
@@ -82,6 +83,8 @@ export default class GameScene extends Phaser.Scene {
         this.load.image("stage3BG","asset/BackGround/Stage3BackGround.png");
         this.load.image("rock", "asset/stageGround/rock.png");
         this.load.image("syainsyo", "asset/syainsyo/syainsyo.jpg");
+        this.load.image("normalCloud","asset/cloud/normalCloud.png");
+        this.load.image("ZossCloud","asset/cloud/ZossCloud.png");
         console.log("[preload] 画像アセットのロードを予約しました(yoshida含む)");
     }
     soundLoader() {
@@ -195,6 +198,8 @@ export default class GameScene extends Phaser.Scene {
         this.bullets = this.physics.add.group();
         this.uenos = this.physics.add.group();
         this.yoshidas = this.physics.add.group();
+        this.pipeWarps = this.physics.add.staticGroup();
+        this.clouds = this.physics.add.group();
 
         // 1. ステージ読込
         this.loadStageData();
@@ -207,6 +212,7 @@ export default class GameScene extends Phaser.Scene {
         this.createPlayer();
         this.createBossLaser();
         this.createEnemies();
+        
         this.createBlocks();
         this.createTraps();
         this.createGoal();
@@ -380,6 +386,7 @@ export default class GameScene extends Phaser.Scene {
             })),
             ...(this.stageData.groundDecorationList || [])
         ];
+        this.pipeWarpList = this.stageData.pipeWarpList || [];
         this.blockList = this.stageData.blockList || [];
         this.hiddenBlockList = this.stageData.hiddenBlockList || [];
         this.enemySpawnList = this.stageData.enemySpawnList || [];
@@ -438,6 +445,11 @@ export default class GameScene extends Phaser.Scene {
                 trap = new Bane(this, px, py);
                 this.banes.add(trap); // ★this.traps ではなく、this.banes に追加する
                 console.log(`[createTraps] ${data.type} を生成`); // ※バッククォーテーションに直しておきました
+                break;
+            case "cloud":
+                trap = new Cloud(this, px, py);
+                this.clouds.add(trap);
+                console.log(`[createTraps] ${data.type} を生成`);
                 break;
         }
     });
@@ -524,6 +536,38 @@ export default class GameScene extends Phaser.Scene {
 
             this.grounds.add(ground);
         });
+        this.pipeWarpList.forEach(data => {
+
+            const px = this.getPixelX(data.enterX);
+            const py = this.getPixelY(data.enterY)-1;
+
+            const zone =
+                this.add.zone(
+                    px,
+                    py,
+                    this.TILE,
+                    this.TILE
+                );
+                // デバッグ表示
+            /*const debugRect =
+                this.add.rectangle(
+                    px,
+                    py,
+                    this.TILE,
+                    this.TILE,
+                    0xff0000,
+                    0.4
+                );
+
+            debugRect.setDepth(9999);
+            */
+
+            this.physics.add.existing(zone, true);
+
+            zone.warpData = data;
+
+            this.pipeWarps.add(zone);
+        }); 
 
         this.groundDecorationList.forEach(decoration => {
             if (!decoration.texture) {
@@ -708,6 +752,23 @@ export default class GameScene extends Phaser.Scene {
         );
         this.physics.add.overlap(
             this.player,
+            this.traps,
+            (player, trap) => {
+
+                // Reihuuki
+                if (trap.activate) {
+                    trap.activate(player);
+                    
+
+                    // Cloud
+                    if (trap.onPlayerOverlap) {
+                        trap.onPlayerOverlap(player);
+                    }
+                }
+            }
+        );
+        this.physics.add.overlap(
+            this.player,
             this.lasers,
             this.handlePlayerDamage,
             null,
@@ -763,6 +824,23 @@ export default class GameScene extends Phaser.Scene {
         null,
         this
     );
+        this.physics.add.overlap(
+            this.player,
+                this.pipeWarps,
+
+                (player, pipe) => {
+            
+                // 下キー押下
+                if (!this.cursors.down.isDown) {
+                    return;
+                    }
+            
+                this.enterPipe(pipe.warpData);
+            },
+        
+            null,
+            this
+        );
     
         this.physics.add.collider(
             this.player,
@@ -789,6 +867,18 @@ export default class GameScene extends Phaser.Scene {
 
                 if (isHitFromBelow && trap.hit) {
                     trap.hit(player);
+                }
+            },
+            null,
+            this
+        );
+        this.physics.add.overlap(
+            this.player,
+            this.clouds,
+            (player, cloud) => {
+
+                if (cloud.onPlayerOverlap) {
+                    cloud.onPlayerOverlap(player);
                 }
             },
             null,
@@ -875,6 +965,47 @@ export default class GameScene extends Phaser.Scene {
         console.log(`[Combat] プレイヤーがダメージを受けます。ソース: ${damageSource.constructor.name}, ダメージ量: ${damage}`);
         player.takeDamage(damage);
     }
+
+
+        enterPipe(warpData) {
+            // 多重防止
+        if (this.isWarping) {
+          return;
+        }
+        this.isWarping = true;
+
+        // 操作停止
+        this.player.canMove = false;
+
+        // ★重要: 物理演算（重力や地面との衝突）を一時的に無効化
+        // これを行わないと、Tweenによる沈み込みと地面の当たり判定がケンカしてしまいます
+        this.player.body.enable = false;
+        this.player.setVelocity(0, 0);
+
+        // 土管に沈む演出
+        this.tweens.add({
+          targets: this.player,
+          y: this.player.y + this.TILE+30, // 土管1マス分しっかり沈める
+          duration: 400,
+          onComplete: () => {
+            // 左上へ移動
+            const newX = this.getPixelX(warpData.exitX);
+            const newY = this.getPixelY(warpData.exitY);
+
+            this.player.setPosition(newX, newY);
+
+            // ★重要: 移動先で物理演算を再有効化し、落下を開始させる
+            this.player.body.enable = true;
+            this.player.setVelocity(0, 0); // 落下前の速度をリセット
+
+            // 少し待って操作復帰
+            this.time.delayedCall(500, () => {
+              this.player.canMove = true;
+              this.isWarping = false; // ★途切れていたワープ状態の解除フラグを追加
+            });
+          }
+        });
+    } 
 
     // =====================================
     // ゲームオーバー
@@ -1015,7 +1146,7 @@ export default class GameScene extends Phaser.Scene {
             if (this.timer) {
                 this.timer.update();
             }
-            console.log("プレイヤーの高さ",this.player.y);
+            
 
         // =========================
         // プレイヤー更新

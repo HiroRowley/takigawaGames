@@ -29,9 +29,9 @@ export default class ResultScene extends Phaser.Scene {
         const centerX = this.cameras.main.width / 2;
         const centerY = this.cameras.main.height / 2;
  
-        // キャラクターのイメージを表示
-        // ※ "player" の部分は、preloadで読み込んだ際の画像キーを指定してください
-        this.add.image(centerX - 60, centerY, "player");
+        // キャラクターのイメージを表示して縮小する
+        // ★ ここに .setScale(0.5) を追加（0.5で半分のサイズになります）
+        this.add.image(centerX - 60, centerY, "player").setScale(0.2);
  
         // 「有給 〇日」のテキストを表示
         this.add.text(centerX, centerY - 16, `有給 × ${this.paidHolidays} 日`, {

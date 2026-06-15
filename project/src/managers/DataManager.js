@@ -39,6 +39,7 @@ class DataManager {
 
     this.currentStage = System.CONFIG.START_STAGE;
     this.respawnStage = System.CONFIG.START_STAGE;
+    this.holidayCounter = 1;
 
     // =====================================================
     // ■ 遅刻カウント
@@ -63,6 +64,7 @@ class DataManager {
   // =========================================================
   // ■ 有給管理
   // =========================================================
+  
 
   getPaidHolidays() {
     return this.paidHolidays;
@@ -70,6 +72,7 @@ class DataManager {
 
   setPaidHolidays(value) {
     this.paidHolidays = value;
+    
   }
 
   // =========================================================
@@ -102,6 +105,7 @@ class DataManager {
 
     // 遅刻回数
     this.lateCount++;
+    
   }
 
   // =========================================================

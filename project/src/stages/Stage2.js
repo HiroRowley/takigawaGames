@@ -94,6 +94,14 @@ const Stage2Map = {
   gimmickList: [
     { x: 39, y: 12, type: "reihuuki" }, // 右側のreihuuki (x:39, y:12)
   ],
+  //トラップ
+  trapList:[
+    {
+            x: 38,
+            y: 9,
+            type: "reihuuki",
+        },
+  ],
  
   // ゴール (uenoのいる右下通路の奥を想定)
   goal: {
