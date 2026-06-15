@@ -80,7 +80,11 @@ export default class Ueno extends EnemyBase {
     }
 
     update() {
+        // 完全固定
+        this.body.velocity.x = 0;
+        this.body.velocity.y = 0;
         // 動かないので親クラスの画面外削除チェックなどだけ行う
+
         super.update();
     }
 }

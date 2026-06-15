@@ -20,8 +20,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         // プレイヤー設定
         // =========================
 
-        this.moveSpeed = 400;
-        this.jumpPower = 900;
+        this.moveSpeed = 300;
+        this.jumpPower = 600;
 
         // 状態管理
         this.isLate = false;

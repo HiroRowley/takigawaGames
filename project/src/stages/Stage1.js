@@ -117,6 +117,32 @@ const Stage1 = {
     y: 22,
   },
 
+  pipeWarpList: [
+
+        {
+            enterX: 29,
+            enterY: 14,
+
+            exitX: 2,
+            exitY: -10
+        },
+        {
+            enterX: 28,
+            enterY: 14,
+
+            exitX: 2,
+            exitY: -10
+        },
+        {
+            enterX: 30,
+            enterY: 14,
+
+            exitX: 2,
+            exitY: -10
+        }
+
+    ],
+
   // =========================
   // 敵
   // =========================
@@ -158,6 +184,11 @@ const Stage1 = {
   // トラップ
   // =========================
   trapList: [
+    {
+      x: 2,
+      y: 5,
+      type: "cloud"
+    },
 
     {
       x: 26,
@@ -173,14 +204,14 @@ const Stage1 = {
     },
     {
       x: 42.5,
-      y: 6,
+      y: 7,
       type: "itemBlock",
       itemType: "empty",
       hidden: true
     },
     {
       x: 41.5,
-      y: 6,
+      y: 7,
       type: "itemBlock",
       itemType: "empty",
       hidden: true
@@ -225,7 +256,7 @@ const Stage1 = {
 
     {
       x: 40.5,
-      y: 6,
+      y: 7,
       type: "itemBlock",
       itemType: "jousisu"
     }

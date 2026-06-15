@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import TrapBase from "./TrapBase";
 
-import GameScene from "../../scenes/GameScene";
+import GameScene from "../../scenes/GameScene/GameScene";
 
 export default class Bane extends TrapBase {
 

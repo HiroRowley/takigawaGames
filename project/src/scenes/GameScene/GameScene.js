@@ -1,24 +1,26 @@
 import Phaser from "phaser";
-import DataManager from "../managers/DataManager.js";
+import DataManager from "../../managers/DataManager.js";
 
 // ステージデータのインポート
-import Stage1 from "../stages/Stage1.js";
-import Stage2 from "../stages/Stage2.js";
-import Stage3 from "../stages/Stage3.js";
-import SampleStage from "../stages/SampleStage.js"
+import Stage1 from "../../stages/Stage1.js";
+import Stage2 from "../../stages/Stage2.js";
+import Stage3 from "../../stages/Stage3.js";
+import SampleStage from "../../stages/SampleStage.js"
 
-import Player from "../objects/Player.js";
-import Enemy from "../objects/enemy/EnemyBase.js";
-import Trap from "../objects/traps/TrapBase.js";
-import Noda from "../objects/enemy/Noda.js";
-import Yoshida from "../objects/enemy/Yoshida.js";
-import Shimba from "../objects/enemy/Shimba.js";
-import Rowley from "../objects/enemy/Rowley.js";
-import ItemBlock from "../objects/traps/itemBlock.js";
-import Ueno from "../objects/enemy/Ueno.js";
+import Player from "../../objects/Player.js";
+import Enemy from "../../objects/enemy/EnemyBase.js";
+import Trap from "../../objects/traps/TrapBase.js";
+import Noda from "../../objects/enemy/Noda.js";
+import Yoshida from "../../objects/enemy/Yoshida.js";
+import Shimba from "../../objects/enemy/Shimba.js";
+import Rowley from "../../objects/enemy/Rowley.js";
+import ItemBlock from "../../objects/traps/itemBlock.js";
+import Ueno from "../../objects/enemy/Ueno.js";
 
-import Reihuuki from "../objects/traps/reihuuki.js";
-import Bane from "../objects/traps/bane.js";
+import Reihuuki from "../../objects/traps/reihuuki.js";
+import Bane from "../../objects/traps/bane.js";
+import Timer from "../../timer/Timer.js";
+import Cloud from "../../objects/traps/cloud.js";
 
 export default class GameScene extends Phaser.Scene {
 
@@ -67,6 +69,7 @@ export default class GameScene extends Phaser.Scene {
         this.load.image("shimba", "asset/shimba/shimba.png");
         this.load.image("dirt", "asset/stageGround/dirt.png");
         this.load.image("grass", "asset/stageGround/grass.png");
+        this.load.image("pipe", "asset/stageGround/pipe.png");
         this.load.image("reihuuki", "asset/reihuuki/reihuuki.png");
         this.load.image("reihuukiSpill", "asset/reihuuki/reihuukiSpillWater.png");
         this.load.image("itemBlock","asset/item/itemBlock.jpg");
@@ -79,6 +82,9 @@ export default class GameScene extends Phaser.Scene {
         this.load.image("bullet","asset/ueno/bullet.png");
         this.load.image("stage3BG","asset/BackGround/Stage3BackGround.png");
         this.load.image("rock", "asset/stageGround/rock.png");
+        this.load.image("syainsyo", "asset/syainsyo/syainsyo.jpg");
+        this.load.image("normalCloud","asset/cloud/normalCloud.png");
+        this.load.image("ZossCloud","asset/cloud/ZossCloud.png");
         console.log("[preload] 画像アセットのロードを予約しました(yoshida含む)");
     }
     soundLoader() {
@@ -117,7 +123,7 @@ export default class GameScene extends Phaser.Scene {
 
         const types = [
             "noda",
-            "yoshida",
+            
             
         ];
 
@@ -160,8 +166,8 @@ export default class GameScene extends Phaser.Scene {
     // create
     // =====================================
     create() {
-        this.physics.world.drawDebug = true;
-    this.physics.world.createDebugGraphic();
+        //this.physics.world.drawDebug = true;
+        //this.physics.world.createDebugGraphic();
         if (this.stageNumber === 3) {
 
         // 画像背景
@@ -192,6 +198,8 @@ export default class GameScene extends Phaser.Scene {
         this.bullets = this.physics.add.group();
         this.uenos = this.physics.add.group();
         this.yoshidas = this.physics.add.group();
+        this.pipeWarps = this.physics.add.staticGroup();
+        this.clouds = this.physics.add.group();
 
         // 1. ステージ読込
         this.loadStageData();
@@ -204,10 +212,19 @@ export default class GameScene extends Phaser.Scene {
         this.createPlayer();
         this.createBossLaser();
         this.createEnemies();
+        
         this.createBlocks();
         this.createTraps();
         this.createGoal();
         this.createSound();
+        if (this.stageNumber === 3) {
+            this.timer = new Timer(this, 30); // 30秒タイマー
+            
+            // 30秒耐えきった時の処理
+            this.timer.onTimeUp(() => {
+                this.spawnGoalAndBlocks(); // ゴールを降下させるメソッドを呼ぶ
+            });
+        }
         
         // 4. コライダー（当たり判定）設定
         this.setupCollisions();
@@ -250,6 +267,7 @@ export default class GameScene extends Phaser.Scene {
         this.updateUI();
 
         this.isGameOver = false;
+        this.isClearing = false;
         
         console.log("[create] シーンの初期構築がすべて完了しました。");
     }
@@ -267,6 +285,7 @@ export default class GameScene extends Phaser.Scene {
     this.gameoverSound = this.sound.add("gameoverSound");
     this.baneSound = this.sound.add("bane");
     this.hitSound = this.sound.add("hit");
+    this.isClearing = false;
 
     // =========================
     // ステージ別BGM
@@ -359,6 +378,15 @@ export default class GameScene extends Phaser.Scene {
 
         // データが存在しないプロパティは空配列 [] で初期化
         this.groundList = this.stageData.groundList || [];
+        this.groundDecorationList = [
+            ...(this.stageData.pipeList || []).map(pipe => ({
+                texture: "pipe",
+                depth: 10,
+                ...pipe
+            })),
+            ...(this.stageData.groundDecorationList || [])
+        ];
+        this.pipeWarpList = this.stageData.pipeWarpList || [];
         this.blockList = this.stageData.blockList || [];
         this.hiddenBlockList = this.stageData.hiddenBlockList || [];
         this.enemySpawnList = this.stageData.enemySpawnList || [];
@@ -418,6 +446,11 @@ export default class GameScene extends Phaser.Scene {
                 this.banes.add(trap); // ★this.traps ではなく、this.banes に追加する
                 console.log(`[createTraps] ${data.type} を生成`); // ※バッククォーテーションに直しておきました
                 break;
+            case "cloud":
+                trap = new Cloud(this, px, py);
+                this.clouds.add(trap);
+                console.log(`[createTraps] ${data.type} を生成`);
+                break;
         }
     });
 }
@@ -428,6 +461,23 @@ export default class GameScene extends Phaser.Scene {
         createGround() {
 
         console.log(`[createGround] 地形生成開始`);
+
+        const hiddenGroundTiles = new Set();
+
+        this.groundDecorationList.forEach(decoration => {
+            if (decoration.hideGroundTiles === false) {
+                return;
+            }
+
+            const width = decoration.width || 1;
+            const height = decoration.height || 1;
+
+            for (let y = decoration.y; y < decoration.y + height; y++) {
+                for (let x = decoration.x; x < decoration.x + width; x++) {
+                    hiddenGroundTiles.add(`${x},${y}`);
+                }
+            }
+        });
 
         this.groundList.forEach(pos => {
 
@@ -478,9 +528,71 @@ export default class GameScene extends Phaser.Scene {
 
             ground.refreshBody();
 
+            if (hiddenGroundTiles.has(`${pos.x},${pos.y}`)) {
+                ground.setVisible(false);
+            }
+
             
 
             this.grounds.add(ground);
+        });
+        this.pipeWarpList.forEach(data => {
+
+            const px = this.getPixelX(data.enterX);
+            const py = this.getPixelY(data.enterY)-1;
+
+            const zone =
+                this.add.zone(
+                    px,
+                    py,
+                    this.TILE,
+                    this.TILE
+                );
+                // デバッグ表示
+            /*const debugRect =
+                this.add.rectangle(
+                    px,
+                    py,
+                    this.TILE,
+                    this.TILE,
+                    0xff0000,
+                    0.4
+                );
+
+            debugRect.setDepth(9999);
+            */
+
+            this.physics.add.existing(zone, true);
+
+            zone.warpData = data;
+
+            this.pipeWarps.add(zone);
+        }); 
+
+        this.groundDecorationList.forEach(decoration => {
+            if (!decoration.texture) {
+                return;
+            }
+
+            const width = decoration.width || 1;
+            const height = decoration.height || 1;
+            const px = (decoration.x + width / 2) * this.TILE;
+            const py = (decoration.y + height / 2) * this.TILE;
+            const displayWidth = (decoration.displayWidth || width) * this.TILE;
+            const displayHeight = (decoration.displayHeight || height) * this.TILE;
+
+            const groundDecoration = this.add.image(
+                px,
+                py,
+                decoration.texture
+            );
+
+            groundDecoration.setDisplaySize(
+                displayWidth,
+                displayHeight
+            );
+
+            groundDecoration.setDepth(decoration.depth ?? 0);
         });
         console.log("createGround切り分け",this.grounds.getChildren().length);
         console.log("[createGround] 完了");
@@ -640,6 +752,23 @@ export default class GameScene extends Phaser.Scene {
         );
         this.physics.add.overlap(
             this.player,
+            this.traps,
+            (player, trap) => {
+
+                // Reihuuki
+                if (trap.activate) {
+                    trap.activate(player);
+                    
+
+                    // Cloud
+                    if (trap.onPlayerOverlap) {
+                        trap.onPlayerOverlap(player);
+                    }
+                }
+            }
+        );
+        this.physics.add.overlap(
+            this.player,
             this.lasers,
             this.handlePlayerDamage,
             null,
@@ -695,6 +824,23 @@ export default class GameScene extends Phaser.Scene {
         null,
         this
     );
+        this.physics.add.overlap(
+            this.player,
+                this.pipeWarps,
+
+                (player, pipe) => {
+            
+                // 下キー押下
+                if (!this.cursors.down.isDown) {
+                    return;
+                    }
+            
+                this.enterPipe(pipe.warpData);
+            },
+        
+            null,
+            this
+        );
     
         this.physics.add.collider(
             this.player,
@@ -721,6 +867,18 @@ export default class GameScene extends Phaser.Scene {
 
                 if (isHitFromBelow && trap.hit) {
                     trap.hit(player);
+                }
+            },
+            null,
+            this
+        );
+        this.physics.add.overlap(
+            this.player,
+            this.clouds,
+            (player, cloud) => {
+
+                if (cloud.onPlayerOverlap) {
+                    cloud.onPlayerOverlap(player);
                 }
             },
             null,
@@ -807,6 +965,47 @@ export default class GameScene extends Phaser.Scene {
         console.log(`[Combat] プレイヤーがダメージを受けます。ソース: ${damageSource.constructor.name}, ダメージ量: ${damage}`);
         player.takeDamage(damage);
     }
+
+
+        enterPipe(warpData) {
+            // 多重防止
+        if (this.isWarping) {
+          return;
+        }
+        this.isWarping = true;
+
+        // 操作停止
+        this.player.canMove = false;
+
+        // ★重要: 物理演算（重力や地面との衝突）を一時的に無効化
+        // これを行わないと、Tweenによる沈み込みと地面の当たり判定がケンカしてしまいます
+        this.player.body.enable = false;
+        this.player.setVelocity(0, 0);
+
+        // 土管に沈む演出
+        this.tweens.add({
+          targets: this.player,
+          y: this.player.y + this.TILE+30, // 土管1マス分しっかり沈める
+          duration: 400,
+          onComplete: () => {
+            // 左上へ移動
+            const newX = this.getPixelX(warpData.exitX);
+            const newY = this.getPixelY(warpData.exitY);
+
+            this.player.setPosition(newX, newY);
+
+            // ★重要: 移動先で物理演算を再有効化し、落下を開始させる
+            this.player.body.enable = true;
+            this.player.setVelocity(0, 0); // 落下前の速度をリセット
+
+            // 少し待って操作復帰
+            this.time.delayedCall(500, () => {
+              this.player.canMove = true;
+              this.isWarping = false; // ★途切れていたワープ状態の解除フラグを追加
+            });
+          }
+        });
+    } 
 
     // =====================================
     // ゲームオーバー
@@ -925,12 +1124,14 @@ export default class GameScene extends Phaser.Scene {
         const nextStage = this.stageNumber + 1;
         console.log(`[SceneTransition] ステージクリア！ 次のステージ: ${nextStage}`);
 
+        // もし全ステージクリア（例: 3ステージ目終了）なら ClearScene へ
         if (nextStage > 3) {
-            console.log("[SceneTransition] 全ステージクリア。ResultSceneへ遷移します。");
-            this.scene.start("ResultScene", { clear: true });
+            console.log("[SceneTransition] 全ステージクリア。ClearSceneへ遷移します。");
+
+            // ここで ClearScene を呼び出す
+            this.scene.start("ClearScene", { clear: true }); 
             return;
         }
-
         DataManager.setCurrentStage(nextStage);
         this.scene.start("GameScene", { stageNumber: nextStage });
     }
@@ -942,7 +1143,10 @@ export default class GameScene extends Phaser.Scene {
             if (this.isGameOver) {
                 return; 
             }
-            console.log("プレイヤーの高さ",this.player.y);
+            if (this.timer) {
+                this.timer.update();
+            }
+            
 
         // =========================
         // プレイヤー更新
@@ -1000,6 +1204,67 @@ export default class GameScene extends Phaser.Scene {
                 this.bullets.remove(bullet, true, true);
             }
         });
+        
         this.updateUI();
+    }
+        spawnGoalAndBlocks() {
+
+        console.log(
+            "[Event] 30秒経過！社員証（ゴール）がゆっくり降ってきます！"
+        );
+
+        const dropX = this.getPixelX(23);
+        const targetY = 370;
+        const startY = -100;
+
+        const syainsyo =
+            this.add.image(
+                dropX,
+                startY,
+                "syainsyo"
+            );
+
+        syainsyo.setDisplaySize(64, 64);
+        syainsyo.setDepth(1000);
+
+        this.tweens.add({
+            targets: syainsyo,
+            y: targetY,
+            duration: 4500,
+            ease: "Power2",
+
+            onComplete: () => {
+
+                console.log(
+                    "[Goal] 到着！取得判定を有効にします。"
+                );
+
+                this.physics.add.existing(
+                    syainsyo,
+                    true
+                );
+
+                this.physics.add.overlap(
+                    this.player,
+                    syainsyo,
+
+                    () => {
+
+                        if (this.isClearing) {
+                            return;
+                        }
+
+                        this.isClearing = true;
+
+                        syainsyo.destroy();
+
+                        this.nextStage();
+                    },
+
+                    null,
+                    this
+                );
+            }
+        });
     }
 }
