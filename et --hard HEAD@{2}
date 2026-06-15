@@ -46,4 +46,8 @@
 [33m6508300[m HEAD@{46}: checkout: moving from main to ueno
 [33m6508300[m HEAD@{47}: checkout: moving from ueno to main
 [33m6508300[m HEAD@{48}: checkout: moving from main to ueno
+<<<<<<< HEAD
 [33m6508300[m HEAD@{49}: clone: from https://github.com/HiroRowley/takigawaGames.git
+=======
+[33m6508300[m HEAD@{49}: clone: from https://github.com/HiroRowley/takigawaGames.git
+>>>>>>> origin/endroll
