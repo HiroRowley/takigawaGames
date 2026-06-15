@@ -1120,18 +1120,28 @@ export default class GameScene extends Phaser.Scene {
     // 次ステージ / クリア判定
     // =====================================
     nextStage() {
+
         this.sound.stopAll();
+
+        if (this._cleared) return;
+        this._cleared = true;
+
         const nextStage = this.stageNumber + 1;
+
         console.log(`[SceneTransition] ステージクリア！ 次のステージ: ${nextStage}`);
 
-        // もし全ステージクリア（例: 3ステージ目終了）なら ClearScene へ
         if (nextStage > 3) {
-            console.log("[SceneTransition] 全ステージクリア。ClearSceneへ遷移します。");
+            console.log("[SceneTransition] 全ステージクリア。エンディング演出へ遷移します。");
 
-            // ここで ClearScene を呼び出す
-            this.scene.start("ClearScene", { clear: true }); 
+            this.physics.pause();
+            this.input.enabled = false;
+
+            this.scene.launch("StageClearTransitionScene", {
+                next: "OfficeScene"
+            });
             return;
         }
+
         DataManager.setCurrentStage(nextStage);
         this.scene.start("GameScene", { stageNumber: nextStage });
     }
@@ -1147,7 +1157,6 @@ export default class GameScene extends Phaser.Scene {
                 this.timer.update();
             }
             
-
         // =========================
         // プレイヤー更新
         // =========================
