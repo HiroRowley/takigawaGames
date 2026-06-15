@@ -35,6 +35,7 @@ export default class GameScene extends Phaser.Scene {
     init(data) {
         // もし引数dataからステージ番号が渡ってくる構成なら、そちらを優先するようケアしておきます
         this.stageNumber = (data && data.stageNumber) || 1;
+        this._cleared = false;
         console.log(`[init] ゲームシーンを開始しました。ステージ番号: ${this.stageNumber}`);
     }
 
