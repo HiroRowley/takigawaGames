@@ -22,7 +22,10 @@ C：○○`, {
         this.tweens.add({
             targets: text,
             y: -200,
-            duration: 8000
+            duration: 8000,
+            onComplete: () => {
+            this.scene.start("VideoScene");
+        }
         });
     }
 }

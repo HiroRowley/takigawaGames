@@ -8,6 +8,7 @@ import StageClearTransitionScene from "./scenes/EndingScene/StageClearTransition
 import OfficeScene from "./scenes/EndingScene/OfficeScene.js";
 import EndingScene from "./scenes/EndingScene/EndingScene.js";
 import PreloadScene from "./scenes/EndingScene/PreloadScene.js";
+import VideoScene from "./scenes/EndingScene/VideoScene.js";
 
 const config = {
   type: System.CONFIG.TYPE,
@@ -27,7 +28,8 @@ const config = {
     ResultScene,
     StageClearTransitionScene,
     OfficeScene,
-    EndingScene
+    EndingScene,
+    VideoScene
     ],
 
   physics: {

@@ -14,6 +14,9 @@ export default class PreloadScene extends Phaser.Scene {
 
         // 既存のやつもここに移す
         this.load.image("player", "asset/takigawa/player.png");
+    
+        //ビデオ
+        this.load.video("endingVideo", "asset/ending.mp4");
     }
 
     create() {
