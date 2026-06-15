@@ -27,7 +27,7 @@ export default class GameFlowController {
       throw new TypeError("Damage must be a non-negative finite number.");
     }
 
-    player.takeDamage(damage, damageSource);
+    player.takeDamage(damage);
   }
 
   enterPipe(warpData) {

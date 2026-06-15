@@ -89,7 +89,7 @@ GameScene
 
 ### ダメージ元の伝播
 
-`GameScene` から `Player.takeDamage()` へダメージ元を渡すようにしました。これにより、攻撃元の位置を使ったノックバックが機能します。
+`GameScene`から受け取ったダメージ元を検証し、安全なダメージ値だけを`Player.takeDamage()`へ渡すようにしました。
 
 ### Cloudの接触処理
 
@@ -183,6 +183,13 @@ project/
 │  ├─ managers/
 │  │  ├─ DataManager.js
 │  │  └─ GameState.js
+│  ├─ objects/
+│  │  └─ enemy/
+│  │     ├─ Rowley.js
+│  │     └─ rowley/
+│  │        ├─ RowleyBehavior.js
+│  │        ├─ RowleyDashAttack.js
+│  │        └─ RowleyLaserAttack.js
 │  ├─ scenes/
 │  │  ├─ GameScene.js
 │  │  ├─ createGameSceneState.js
@@ -209,5 +216,64 @@ project/
    └─ validateStageData.test.js
 ```
 
+## Rowley.jsの責務分離
 
+### 分割理由
+
+以前の`Rowley.js`は、敵本体の設定に加えて以下の処理をすべて担当していました。
+
+- 通常移動、ジャンプ、振動移動
+- 攻撃タイマーの管理
+- ダッシュの予告、実行、終了処理
+- レーザーの警告、生成、当たり判定、消滅処理
+
+変更理由が異なる処理が1ファイルに集中していたため、挙動と攻撃ごとに責務を分離しました。
+
+### 分割後の構成
+
+| ファイル | 責務 |
+| --- | --- |
+| `Rowley.js` | Rowley固有の設定、各処理への委譲、倒せない仕様の維持 |
+| `RowleyBehavior.js` | 接近、ジャンプ、振動移動、攻撃タイミングの制御 |
+| `RowleyDashAttack.js` | ダッシュのチャージ、方向・速度の決定、終了処理 |
+| `RowleyLaserAttack.js` | 警告表示、レーザー生成、物理判定、後始末 |
+
+`Rowley.js`は約500行から44行になり、敵本体の設定と処理の委譲を中心とする構成になりました。
+
+### 維持した仕様
+
+- Rowleyは倒せない
+- 縦レーザーを2秒間隔で発射する
+- ダッシュ攻撃を3秒間隔で実行する
+- プレイヤーとの距離に応じて接近または振動移動する
+- 地上ではランダムにジャンプする
+- Stage3側の敵生成処理は変更しない
+
+### 追加した安全対策
+
+プレイヤーとRowleyの座標が完全に一致した場合、ダッシュ方向の正規化で`NaN`が発生しないようにゼロ距離判定を追加しました。
+
+### 検証結果
+
+```text
+npm test
+13 tests passed
+```
+
+```text
+npm run build
+build succeeded
+```
+
+- 新しい依存パッケージなし
+- `package-lock.json`の変更なし
+
+## ノックバック機能の削除
+
+被弾時にプレイヤーを攻撃元と反対方向へ移動させるノックバック機能を削除しました。
+
+- `Player.applyKnockback()`を削除
+- `Player.takeDamage()`からダメージ元の引数を削除
+- HP減少、被弾硬直、無敵時間、被弾演出は維持
+- ダメージ元は、ダメージ量の取得と検証にのみ使用
 

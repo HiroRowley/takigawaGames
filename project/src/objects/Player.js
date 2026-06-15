@@ -71,7 +71,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     // =========================
     // ダメージ処理
     // =========================
-    takeDamage(amount, damageSource) {
+    takeDamage(amount) {
 
         if (typeof amount !== "number" || !Number.isFinite(amount) || amount < 0) {
             throw new TypeError("Damage must be a non-negative finite number.");
@@ -96,12 +96,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         DataManager.setHP(currentHP - amount);
 
         this.scene.hitSound?.play();
-
-        // =========================
-        // ノックバック
-        // =========================
-
-        this.applyKnockback(damageSource);
 
         // =========================
         // 被弾硬直
@@ -134,31 +128,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         if (DataManager.getHP() <= 0) {
 
             this.triggerLate();
-
-        }
-    }
-
-    // =========================
-    // ノックバック
-    // =========================
-    applyKnockback(damageSource) {
-
-        // ダメージ元がない場合は無視
-        if (!damageSource) {
-            return;
-        }
-
-        // 左側から攻撃
-        if (this.x < damageSource.x) {
-
-            this.setVelocity(-250, -200);
-
-        }
-
-        // 右側から攻撃
-        else {
-
-            this.setVelocity(250, -200);
 
         }
     }
