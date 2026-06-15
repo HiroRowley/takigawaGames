@@ -886,56 +886,34 @@ export default class GameScene extends Phaser.Scene {
 
         console.log(`[SceneTransition] ステージクリア！ 次のステージ: ${nextStage}`);
 
-<<<<<<< HEAD:project/src/scenes/GameScene/GameScene.js
-        // ----------------------------------------
-        // ■ 最終ステージ（ステージ3）クリア
-        // ----------------------------------------
-        if (this.stageNumber === 3) {
+if (this.stageNumber === 3) {
 
-            console.log("ステージ3クリア → エンディング演出へ");
+    console.log("ステージ3クリア → エンディング演出へ");
 
-            this.physics.pause();
-            this.input.enabled = false;
+    this.physics.pause();
+    this.input.enabled = false;
 
-            // ★ここが重要：必ず演出に渡すだけ
-            this.scene.launch("StageClearTransitionScene", {
-                next: "OfficeScene"
-            });
+    this.scene.launch("StageClearTransitionScene", {
+        next: "OfficeScene"
+    });
 
-=======
-        //エンディングへ
-        if (this.stageNumber === 3) {
-            console.log("ステージ3クリア → エンディングへ");
+    return;
+}
 
-            this.scene.start("StageClearTransitionScene");
-            return;
-        }
+if (nextStage > 3) {
 
-        if (nextStage > 3) {
-            console.log("[SceneTransition] 全ステージクリア。ResultSceneへ遷移します。");
-            this.scene.start("ResultScene", { clear: true }); 
->>>>>>> 0582a82083b29ae48494097b17de6606d7e59da4:project/src/scenes/GameScene.js
-            return;
-        }
+    console.log("[SceneTransition] 全ステージクリア → ClearScene");
 
-        // ----------------------------------------
-        // ■ 全ステージクリア（念のため保険）
-        // ----------------------------------------
-        if (nextStage > 3) {
+    this.physics.pause();
+    this.input.enabled = false;
 
-            console.log("[SceneTransition] 全ステージクリア → ClearScene");
+    this.scene.launch("StageClearTransitionScene", {
+        next: "ClearScene",
+        data: { clear: true }
+    });
 
-            this.physics.pause();
-            this.input.enabled = false;
-
-            this.scene.launch("StageClearTransitionScene", {
-                next: "ClearScene",
-                data: { clear: true }
-            });
-
-            return;
-        }
-
+    return;
+}
         // ----------------------------------------
         // ■ 通常ステージ遷移
         // ----------------------------------------
