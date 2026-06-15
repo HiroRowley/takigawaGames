@@ -30,7 +30,7 @@ export default class GameState {
   }
 
   setHP(value) {
-    this.hp = Math.max(0, requireFiniteNumber(value, "hp"));
+    this.hp = 3//Math.max(0, requireFiniteNumber(value, "hp"));
   }
 
   getPaidHolidays() {
