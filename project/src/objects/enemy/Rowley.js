@@ -51,10 +51,6 @@ export default class Rowley extends EnemyBase {
         this.jumpTimer = 0;
 
         this.isDashing = false;
-
-        this.phase = "move";
-
-        this.phaseTimer = 0;
     }
 
     // =========================
@@ -388,34 +384,6 @@ export default class Rowley extends EnemyBase {
     // =========================
 
     update(player, time) {
-        // =========================
-// フェーズ切り替え
-// =========================
-
-        if (time > this.phaseTimer) {
-        
-            if (this.phase === "move") {
-            
-                this.phase = "laser";
-            
-                this.phaseTimer = time + 6000;
-            }
-        
-            else if (this.phase === "laser") {
-            
-                this.phase = "dash";
-            
-                this.phaseTimer = time + 4000;
-            }
-        
-            else {
-            
-                this.phase = "move";
-            
-                this.phaseTimer = time + 5000;
-            }
-        }
-
         if (!player) {
             return;
         }

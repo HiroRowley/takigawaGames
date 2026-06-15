@@ -73,6 +73,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     // =========================
     takeDamage(amount, damageSource) {
 
+        if (typeof amount !== "number" || !Number.isFinite(amount) || amount < 0) {
+            throw new TypeError("Damage must be a non-negative finite number.");
+        }
+
         // 遅刻済み
         if (this.isLate) {
             return;
@@ -91,7 +95,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
         DataManager.setHP(currentHP - amount);
 
-        this.scene.hitSound.play();
+        this.scene.hitSound?.play();
 
         // =========================
         // ノックバック

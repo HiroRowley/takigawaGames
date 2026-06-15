@@ -2,7 +2,9 @@
   "name": "project",
   "version": "1.0.0",
   "scripts": {
-    "dev": "vite"
+    "dev": "vite",
+    "test": "node --test --test-isolation=none",
+    "build": "vite build"
   },
   "type": "module",
   "dependencies": {

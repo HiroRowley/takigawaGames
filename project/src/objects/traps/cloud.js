@@ -1,5 +1,4 @@
-import Phaser from "phaser";
-import TrapBase from "./TrapBase";
+import TrapBase from "./TrapBase.js";
 
 export default class Cloud extends TrapBase {
 
@@ -74,9 +73,9 @@ export default class Cloud extends TrapBase {
         // =========================
         // 999ダメージ
         // =========================
-        if (player.takeDamage) {
+        if (typeof player.takeDamage === "function") {
 
-            player.takeDamage(999);
+            player.takeDamage(999, this);
 
         } else {
 
@@ -108,7 +107,4 @@ export default class Cloud extends TrapBase {
         });
     }
 
-    update() {
-
-    }
 }

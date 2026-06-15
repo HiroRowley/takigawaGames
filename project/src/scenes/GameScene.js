@@ -1,1282 +1,150 @@
 import Phaser from "phaser";
 import DataManager from "../managers/DataManager.js";
-
-// ステージデータのインポート
-import Stage1 from "../stages/Stage1.js";
-import Stage2 from "../stages/Stage2.js";
-import Stage3 from "../stages/Stage3.js";
-import SampleStage from "../stages/SampleStage.js"
-
-import Player from "../objects/Player.js";
-import Enemy from "../objects/enemy/EnemyBase.js";
-import Trap from "../objects/traps/TrapBase.js";
-import Noda from "../objects/enemy/Noda.js";
-import Yoshida from "../objects/enemy/Yoshida.js";
-import Shimba from "../objects/enemy/Shimba.js";
-import Rowley from "../objects/enemy/Rowley.js";
-import ItemBlock from "../objects/traps/itemBlock.js";
-import Ueno from "../objects/enemy/Ueno.js";
-
-import Reihuuki from "../objects/traps/reihuuki.js";
-import Bane from "../objects/traps/bane.js";
-import Timer from "../timer/Timer.js";
-import Cloud from "../objects/traps/cloud.js";
+import createGameSceneState from "./createGameSceneState.js";
+import CollisionManager from "./game/CollisionManager.js";
+import GameAssetLoader from "./game/GameAssetLoader.js";
+import GameAudioController from "./game/GameAudioController.js";
+import GameFlowController from "./game/GameFlowController.js";
+import GameHUD from "./game/GameHUD.js";
+import GameObjectFactory from "./game/GameObjectFactory.js";
+import Stage3Controller from "./game/Stage3Controller.js";
+import StageBuilder from "./game/StageBuilder.js";
+import StageRepository from "./game/StageRepository.js";
 
 export default class GameScene extends Phaser.Scene {
+  constructor() {
+    super("GameScene");
+    this.stageRepository = new StageRepository();
+  }
 
-    constructor() {
-        super("GameScene");
-        this.enemySpawnTimer = 0;
+  init(data) {
+    Object.assign(this, createGameSceneState(data?.stageNumber ?? 1));
+  }
+
+  preload() {
+    GameAssetLoader.preload(this);
+  }
+
+  create() {
+    this.physics.resume();
+    this.physics.world.timeScale = 1;
+    this.input.enabled = true;
+    this.createBackground();
+
+    this.applyStage(this.stageRepository.get(this.stageNumber));
+    this.stageBuilder = new StageBuilder(this);
+    this.objectFactory = new GameObjectFactory(this, this.stageBuilder);
+    this.objectFactory.createGroups();
+    this.objectFactory.createTextureFrames();
+
+    this.stageBuilder.build();
+    this.objectFactory.createPlayer();
+    this.objectFactory.createEnemies();
+    this.objectFactory.createTraps();
+    this.objectFactory.createGoal();
+
+    this.audioController = new GameAudioController(this);
+    this.audioController.create(this.stageNumber);
+    this.gameFlow = new GameFlowController(this, DataManager);
+    this.gameFlow.registerPlayerEvents();
+
+    this.collisionManager = new CollisionManager(this);
+    this.collisionManager.register();
+
+    this.stage3Controller = new Stage3Controller(this);
+    this.stage3Controller.create();
+
+    this.hud = new GameHUD(this, DataManager);
+    this.hud.create();
+  }
+
+  createBackground() {
+    if (this.stageNumber !== 3) {
+      this.cameras.main.setBackgroundColor("#45a2c7");
+      return;
     }
 
-    // =====================================
-    // init
-    // =====================================
-    init(data) {
-        // もし引数dataからステージ番号が渡ってくる構成なら、そちらを優先するようケアしておきます
-        this.stageNumber = (data && data.stageNumber) || 1;
-        console.log(`[init] ゲームシーンを開始しました。ステージ番号: ${this.stageNumber}`);
+    const background = this.add.image(0, 0, "stage3BG").setOrigin(0, 0);
+    background.displayWidth = this.scale.width;
+    background.displayHeight = this.scale.height;
+  }
+
+  applyStage(stage) {
+    this.stageData = stage.raw;
+    this.TILE = stage.tileSize;
+    this.groundList = stage.groundList;
+    this.groundDecorationList = stage.groundDecorationList;
+    this.pipeWarpList = stage.pipeWarpList;
+    this.blockList = stage.blockList;
+    this.hiddenBlockList = stage.hiddenBlockList;
+    this.enemySpawnList = stage.enemySpawnList;
+    this.trapList = stage.trapList;
+    this.playerSpawn = stage.playerSpawn;
+    this.goalData = stage.goal;
+  }
+
+  getPixelX(x) {
+    return this.stageBuilder.getPixelX(x);
+  }
+
+  getPixelY(y) {
+    return this.stageBuilder.getPixelY(y);
+  }
+
+  handleEnemyStomp(enemy, player) {
+    this.gameFlow.handleEnemyStomp(enemy, player);
+  }
+
+  handlePlayerDamage(player, damageSource) {
+    this.gameFlow.handlePlayerDamage(player, damageSource);
+  }
+
+  enterPipe(warpData) {
+    this.gameFlow.enterPipe(warpData);
+  }
+
+  gameOver() {
+    this.gameFlow.gameOver();
+  }
+
+  nextStage() {
+    this.gameFlow.nextStage();
+  }
+
+  update(time) {
+    if (this.isGameOver) return;
+
+    this.player?.update(this.cursors);
+    this.updateEnemies(time);
+    this.removeOffscreenBullets();
+    this.stage3Controller.update(time);
+    this.hud.update();
+  }
+
+  updateEnemies(time) {
+    for (const enemy of this.enemies.getChildren()) {
+      enemy.update?.(this.player, time);
+
+      if (this.isOffscreen(enemy)) {
+        this.enemies.remove(enemy, true, true);
+      }
     }
+  }
 
-    // =====================================
-    // preload
-    // =====================================
-    preload() {
-        console.log("[preload] アセットのロードを開始します...");
-        this.imageLoader();
-        this.soundLoader();
+  removeOffscreenBullets() {
+    for (const bullet of this.bullets.getChildren()) {
+      if (this.isOffscreen(bullet)) {
+        this.bullets.remove(bullet, true, true);
+      }
     }
+  }
 
-
-    imageLoader() {
-        // 全ステージで使う画像をロード
-        this.load.spritesheet("player", "asset/takigawa/takigawaWalk10.png", {
-            frameWidth: 597,
-            frameHeight: 592
-        });
-
-        this.load.spritesheet("noda", "asset/noda/noda.png", {
-            frameWidth: 100,
-            frameHeight: 128
-        });
-        this.load.image("yoshida", "asset/yoshida/yoshida01.png");
-        this.load.image("yoshida-walk-2", "asset/yoshida/animation/yoshidaWalk02.png");
-        this.load.image("yoshida-walk-3", "asset/yoshida/animation/yoshidaWalk03.png");
-        this.load.image("yoshida-walk-4", "asset/yoshida/animation/yoshidaWalk04.png");
-        this.load.image("rowley", "asset/rowley/rowleyWalking.png");
-        // ※ もしground画像を用意した場合は、ここでロードしてください。
-        // 例: this.load.image("ground", "asset/ground.png");
-        this.load.image("shimba", "asset/shimba/shimba.png");
-        this.load.image("dirt", "asset/stageGround/dirt.png");
-        this.load.image("grass", "asset/stageGround/grass.png");
-        this.load.image("pipe", "asset/stageGround/pipe.png");
-        this.load.image("reihuuki", "asset/reihuuki/reihuuki.png");
-        this.load.image("reihuukiSpill", "asset/reihuuki/reihuukiSpillWater.png");
-        this.load.image("itemBlock","asset/item/itemBlock.jpg");
-        this.load.image("jousisu","asset/jousisu/jousisu.png");
-        this.load.image("darkOverlay","asset/jousisu/dark.png");
-        this.load.image("halo","asset/jousisu/halo.png");
-        this.load.image("baneNormall","asset/item/baneNormall.png");
-        this.load.image("baneStomp","asset/item/baneStomp.png");
-        this.load.image("ueno","asset/ueno/ueno.png");
-        this.load.image("bullet","asset/ueno/bullet.png");
-        this.load.image("stage3BG","asset/BackGround/Stage3BackGround.png");
-        this.load.image("rock", "asset/stageGround/rock.png");
-        this.load.image("syainsyo", "asset/syainsyo/syainsyo.jpg");
-        this.load.image("normalCloud","asset/cloud/normalCloud.png");
-        this.load.image("ZossCloud","asset/cloud/ZossCloud.png");
-        console.log("[preload] 画像アセットのロードを予約しました(yoshida含む)");
-    }
-    soundLoader() {
-        // サウンドのロードはここで行います。
-        // 例: this.load.audio("jump", "asset/sounds/jump.wav");
-        this.load.audio("reihuukiNoise", "asset/sounds/reihuukiNoise.m4a");
-        this.load.audio("holyMusic", "asset/sounds/holyMusic.mp3");
-        this.load.audio("gameoverSound","asset/sounds/gameoverSound.mp3");
-        this.load.audio("bane","asset/sounds/bane.mp3");
-        this.load.audio("hit","asset/sounds/getHit.mp3");
-        this.load.audio("Stage3BGM","asset/sounds/battleWithRowely.mp3");
-        this.load.audio("Stage1BGM","asset/sounds/Gemini音楽1.mp3");
-        this.load.audio("Stage2BGM","asset/sounds/secondStageMusic.mp3");
-        this.load.audio("jumpSound","asset/sounds/jump.mp3");
-        this.load.audio("enemyDown","asset/sounds/enemyDown.mp3");
-        this.load.audio("shimbaStart","asset/sounds/shimbaStart.mp3");
-        this.load.audio("laser","asset/sounds/laser.mp3");
-
-    }
-    
-
-    spawnRandomEnemy() {//Rowley
-
-        // =========================
-        // ランダム座標
-        // =========================
-
-        const x = Phaser.Math.Between(100, 700);
-
-        // 上空から落とす
-        const y = 0;
-
-        // =========================
-        // ランダム雑魚
-        // =========================
-
-        const types = [
-            "noda",
-            
-            
-        ];
-
-        const type =
-            Phaser.Utils.Array.GetRandom(types);
-
-        let enemy;
-
-        switch (type) {
-
-            case "noda":
-                enemy = new Noda(this, x, y);
-                break;
-
-            case "yoshida":
-                enemy = new Yoshida(this, x, y);
-                break;
-
-            case "ueno":
-                enemy = new Ueno(this, x, y);
-                break;
-        }
-
-        if (!enemy) {
-            return;
-        }
-
-        this.enemies.add(enemy);
-
-        if (enemy instanceof Ueno) {
-            this.uenos.add(enemy);
-        }
-
-        console.log(
-            `[Spawn] 雑魚敵生成: ${type}`
-        );
-    }
-
-    // =====================================
-    // create
-    // =====================================
-    create() {
-        //this.physics.world.drawDebug = true;
-        //this.physics.world.createDebugGraphic();
-        if (this.stageNumber === 3) {
-
-        // 画像背景
-        const bg = this.add.image(
-            0,
-            0,
-            "stage3BG"
-        );
-
-        bg.setOrigin(0, 0);
-
-        bg.displayWidth = this.scale.width;
-
-        bg.displayHeight = this.scale.height;
-
-        } else {
-            // 単色背景
-            this.cameras.main.setBackgroundColor("#45a2c7");
-        }
-
-        
-        console.log("[create] オブジェクトグループを初期化します。");
-        // オブジェクトグループを静的グループ(staticGroup)として初期化
-        this.grounds = this.physics.add.staticGroup();
-        this.enemies = this.physics.add.group();
-        this.traps = this.physics.add.group(); // トラップ用のグループも一応初期化
-        this.banes = this.physics.add.group();
-        this.bullets = this.physics.add.group();
-        this.uenos = this.physics.add.group();
-        this.yoshidas = this.physics.add.group();
-        this.pipeWarps = this.physics.add.staticGroup();
-        this.clouds = this.physics.add.group();
-
-        // 1. ステージ読込
-        this.loadStageData();
-        this.createEnemyTextureFrames();
-
-        // 2. 地形生成
-        this.createGround();
-
-        // 3. 各種オブジェクト生成
-        this.createPlayer();
-        this.createBossLaser();
-        this.createEnemies();
-        
-        this.createBlocks();
-        this.createTraps();
-        this.createGoal();
-        this.createSound();
-        if (this.stageNumber === 3) {
-            this.timer = new Timer(this, 30); // 30秒タイマー
-            
-            // 30秒耐えきった時の処理
-            this.timer.onTimeUp(() => {
-                this.spawnGoalAndBlocks(); // ゴールを降下させるメソッドを呼ぶ
-            });
-        }
-        
-        // 4. コライダー（当たり判定）設定
-        this.setupCollisions();
-
-        // 5. プレイヤー死亡監視
-        this.setupPlayerDeathListener();
-
-        this.hpText = this.add.text(
-            20,
-            20,
-            "",
-            {
-                fontSize: "28px",
-                color: "#ffffff",
-                stroke: "#000000",
-                strokeThickness: 5
-            }
-        );
-
-        this.paidHolidayText = this.add.text(
-            20,
-            60,
-            "",
-            {
-                fontSize: "28px",
-                color: "#ffffff",
-                stroke: "#000000",
-                strokeThickness: 4
-            }
-        );
-
-        // カメラ固定
-        this.hpText.setScrollFactor(0);
-        this.paidHolidayText.setScrollFactor(0);
-
-        // 最前面
-        this.hpText.setDepth(9999);
-        this.paidHolidayText.setDepth(9999);
-
-        this.updateUI();
-
-        this.isGameOver = false;
-        this.isClearing = false;
-        
-        console.log("[create] シーンの初期構築がすべて完了しました。");
-    }
-    createBane(){
-        this.bane = new Bane(this,500,400);
-    }
-    createBlocks(){
-
-        this.blocks = this.physics.add.group();
-
-        this.hiddenBlocks = this.physics.add.group();
-    }
-    createSound(){
-
-    this.gameoverSound = this.sound.add("gameoverSound");
-    this.baneSound = this.sound.add("bane");
-    this.hitSound = this.sound.add("hit");
-    this.isClearing = false;
-
-    // =========================
-    // ステージ別BGM
-    // =========================
-
-    this.stage1BGM = this.sound.add("Stage1BGM", {
-        loop: true,
-        volume: 0.5
-    });
-
-    this.stage2BGM = this.sound.add("Stage2BGM", {
-        loop: true,
-        volume: 0.5
-    });
-
-    this.stage3BGM = this.sound.add("Stage3BGM", {
-        loop: true,
-        volume: 0.8
-    });
-    this.jumpSound = this.sound.add("jumpSound", {
-        volume: 0.5
-    });
-    this.enemyDownSound = this.sound.add("enemyDown", {
-        volume: 0.6
-    });
-    this.shimbaStartSound = this.sound.add("shimbaStart", {
-        volume: 0.7
-    });
-
-    // =========================
-    // ステージごとに再生
-    // =========================
-
-    switch (this.stageNumber) {
-
-        case 1:
-            this.stage1BGM.play();
-            break;
-
-        case 2:
-            this.stage2BGM.play();
-            break;
-
-        case 3:
-            this.stage3BGM.play();
-            break;
-    }
-}
-    updateUI() {
-
-        const hp =
-            DataManager.getHP();
-
-        const paidHolidays =
-            DataManager.getPaidHolidays();
-
-        this.hpText.setText(
-            `HP : ${hp}`
-        );
-
-        this.paidHolidayText.setText(
-            `有給 : ${paidHolidays}`
-        );
-    }
-
-    // =====================================
-    // ステージ読込とデータ整形
-    // =====================================
-    loadStageData() {
-        console.log(`[loadStageData] Stage${this.stageNumber} データの読み込みを開始します。`);
-        switch (this.stageNumber) {
-            case 1:
-                this.stageData = Stage1;
-                break;
-            case 2:
-                this.stageData = Stage2;
-                break;
-            case 3:
-                this.stageData = Stage3;
-                break;
-            default:
-                console.error(`ステージ ${this.stageNumber} のデータが見つかりません。`);
-                return;
-                
-        }
-        
-
-        // タイルサイズの取得（ステージデータにTILEプロパティがない場合は64をデフォルトとする）
-        this.TILE = this.stageData.TILE || 64;
-
-        // データが存在しないプロパティは空配列 [] で初期化
-        this.groundList = this.stageData.groundList || [];
-        this.groundDecorationList = [
-            ...(this.stageData.pipeList || []).map(pipe => ({
-                texture: "pipe",
-                depth: 10,
-                ...pipe
-            })),
-            ...(this.stageData.groundDecorationList || [])
-        ];
-        this.pipeWarpList = this.stageData.pipeWarpList || [];
-        this.blockList = this.stageData.blockList || [];
-        this.hiddenBlockList = this.stageData.hiddenBlockList || [];
-        this.enemySpawnList = this.stageData.enemySpawnList || [];
-        this.trapList = this.stageData.trapList || [];
-
-        // 必須データの取得
-        this.playerSpawn = this.stageData.playerSpawn;
-        this.goalData = this.stageData.goalPosition || this.stageData.goal;
-
-        console.log(`[loadStageData] 読み込み結果 -> TILE: ${this.TILE}, 地形数: ${this.groundList.length}件, 敵データ数: ${this.enemySpawnList.length}件`);
-        if (this.enemySpawnList.length > 0) {
-            console.log("[loadStageData] 敵配置データ内訳:", JSON.stringify(this.enemySpawnList));
-        }
-    }
-
-    // =====================================
-    // 座標変換ヘルパー関数 タイル座標 → ピクセル座標変換
-    // =====================================
-    getPixelX(x) {
-        return this.TILE ? (x * this.TILE + this.TILE / 2) : x;
-    }
-
-    getPixelY(y) {
-        return this.TILE ? (y * this.TILE + this.TILE / 2) : y;
-    }
-    
-    createTraps() {
-
-    console.log(
-        `[createTraps] トラップ生成開始`
+  isOffscreen(gameObject) {
+    return (
+      gameObject.y > 2000 ||
+      gameObject.y < -2000 ||
+      gameObject.x < -2000 ||
+      gameObject.x > 2000
     );
-
-    this.trapList.forEach(data => {
-
-        const px = this.getPixelX(data.x);
-
-        const py = this.getPixelY(data.y);
-
-        let trap;
-
-        switch (data.type) {
-
-            case "reihuuki":
-                    trap = new Reihuuki(this, px, py);
-                    // 冷風機は動的グループ (traps) に追加
-                    this.traps.add(trap);
-                    console.log(`[createTraps] ${data.type} を生成`);
-                    break;
-            case "itemBlock":
-                trap = new ItemBlock(this, px, py, data.itemType,data.hidden||false);
-                    // アイテムブロックは静的グループ (blocks) のみに追加
-                    this.blocks.add(trap);
-                    console.log(`[createTraps] ${data.type} を生成`);
-                    break;
-            case "bane":
-                trap = new Bane(this, px, py);
-                this.banes.add(trap); // ★this.traps ではなく、this.banes に追加する
-                console.log(`[createTraps] ${data.type} を生成`); // ※バッククォーテーションに直しておきました
-                break;
-            case "cloud":
-                trap = new Cloud(this, px, py);
-                this.clouds.add(trap);
-                console.log(`[createTraps] ${data.type} を生成`);
-                break;
-        }
-    });
-}
-
-    // =====================================
-    // 地形生成
-    // =====================================
-        createGround() {
-
-        console.log(`[createGround] 地形生成開始`);
-
-        const hiddenGroundTiles = new Set();
-
-        this.groundDecorationList.forEach(decoration => {
-            if (decoration.hideGroundTiles === false) {
-                return;
-            }
-
-            const width = decoration.width || 1;
-            const height = decoration.height || 1;
-
-            for (let y = decoration.y; y < decoration.y + height; y++) {
-                for (let x = decoration.x; x < decoration.x + width; x++) {
-                    hiddenGroundTiles.add(`${x},${y}`);
-                }
-            }
-        });
-
-        this.groundList.forEach(pos => {
-
-            const px = this.getPixelX(pos.x);
-            const py = this.getPixelY(pos.y);
-
-            // =========================
-            // 上にブロックがあるか判定
-            // =========================
-
-            const hasGroundAbove =
-                this.groundList.some(other => {
-                    return (
-                        other.x === pos.x &&
-                        other.y === pos.y - 1
-                    );
-                });
-
-            // =========================
-            // 画像選択
-            // =========================
-
-            let texture;
- 
-            if (this.stageNumber === 3) {
-                // ステージ3の場合はすべてrockにする
-                texture = "rock";
-            } else {
-                // ステージ3以外は今まで通りdirtかgrass
-                texture = hasGroundAbove ? "dirt" : "grass";
-            }
-
-            // =========================
-            // staticImage生成
-            // =========================
-
-            const ground =
-                this.physics.add.staticImage(
-                    px,
-                    py,
-                    texture
-                );
-
-            ground.setDisplaySize(
-                this.TILE,
-                this.TILE
-            );
-
-            ground.refreshBody();
-
-            if (hiddenGroundTiles.has(`${pos.x},${pos.y}`)) {
-                ground.setVisible(false);
-            }
-
-            
-
-            this.grounds.add(ground);
-        });
-        this.pipeWarpList.forEach(data => {
-
-            const px = this.getPixelX(data.enterX);
-            const py = this.getPixelY(data.enterY)-1;
-
-            const zone =
-                this.add.zone(
-                    px,
-                    py,
-                    this.TILE,
-                    this.TILE
-                );
-                // デバッグ表示
-            /*const debugRect =
-                this.add.rectangle(
-                    px,
-                    py,
-                    this.TILE,
-                    this.TILE,
-                    0xff0000,
-                    0.4
-                );
-
-            debugRect.setDepth(9999);
-            */
-
-            this.physics.add.existing(zone, true);
-
-            zone.warpData = data;
-
-            this.pipeWarps.add(zone);
-        }); 
-
-        this.groundDecorationList.forEach(decoration => {
-            if (!decoration.texture) {
-                return;
-            }
-
-            const width = decoration.width || 1;
-            const height = decoration.height || 1;
-            const px = (decoration.x + width / 2) * this.TILE;
-            const py = (decoration.y + height / 2) * this.TILE;
-            const displayWidth = (decoration.displayWidth || width) * this.TILE;
-            const displayHeight = (decoration.displayHeight || height) * this.TILE;
-
-            const groundDecoration = this.add.image(
-                px,
-                py,
-                decoration.texture
-            );
-
-            groundDecoration.setDisplaySize(
-                displayWidth,
-                displayHeight
-            );
-
-            groundDecoration.setDepth(decoration.depth ?? 0);
-        });
-        console.log("createGround切り分け",this.grounds.getChildren().length);
-        console.log("[createGround] 完了");
-    }
-
-    // =====================================
-    // Player生成
-    // =====================================
-    createPlayer() {
-        if (!this.playerSpawn) {
-            console.error("[createPlayer] プレイヤーの初期位置（playerSpawn）がステージデータに定義されていません！");
-            return;
-        }
-        const px = this.getPixelX(this.playerSpawn.x);
-        const py = this.getPixelY(this.playerSpawn.y);
-
-        this.player = new Player(this, px, py);
-        this.cursors = this.input.keyboard.createCursorKeys();
-        console.log(`[createPlayer] プレイヤーを生成しました。位置: (${px}, ${py})`);
-    }
-
-    // =====================================
-    // Enemy生成
-    // =====================================
-    createEnemies() {
-        console.log(`[createEnemies] 敵の生成処理に入りました。データ総数: ${this.enemySpawnList.length}`);
-
-        let spawnedCount = 0;
-
-        this.enemySpawnList.forEach((pos, index) => {
-            const px = this.getPixelX(pos.x);
-            const py = this.getPixelY(pos.y);
-
-
-            let enemy;
-            console.log(`[createEnemies] データ[${index}] を解析中... type: "${pos.type}", 位置: (${px}, ${py})`);
-
-            switch (pos.type) {
-                case "noda":
-                    enemy = new Noda(this, px, py);
-                    break;
-                case "yoshida":
-                    enemy = new Yoshida(this, px, py);
-                    break;
-                case "shimba":
-                    enemy = new Shimba(this, px, py);
-                    break;
-                case "ueno":
-                    enemy = new Ueno(this, px, py);
-                    // もしステージデータ側でカスタム設定（弾の種類や角度）があれば適用する
-                    enemy.setCustomConfig(pos.bulletTexture, pos.fireAngle);
-                    break;
-                case "rowley":
-                
-                    enemy = new Rowley(this, px, py);
-                    break;
-
-                default:
-                    console.warn(`[createEnemies] 未知の敵タイプ、または対応していないタイプのためスキップされました: "${pos.type}"`);
-                    return;
-            }
-            this.enemies.add(enemy);
-            
-
-            if (enemy instanceof Ueno) {
-                this.uenos.add(enemy);
-            }
-
-            if (enemy instanceof Yoshida) {
-                this.yoshidas.add(enemy);
-            }
-            spawnedCount++;
-            console.log(`[createEnemies] 敵 "${pos.type}" のインスタンスを生成し、グループに追加しました。`);
-        });
-
-        console.log(`[createEnemies] 敵の生成が終了しました。実際に生成された数: ${spawnedCount} / ${this.enemySpawnList.length}`);
-    }
-
-    createBossLaser() {
-        this.lasers = this.physics.add.group();
-    }
-
-    createEnemyTextureFrames() {
-        this.addTextureFrame("rowley", 0, 294, 284, 400, 600);
-        this.addTextureFrame("rowley", 1, 824, 284, 400, 600);
-    }
-
-    addTextureFrame(textureKey, frameKey, x, y, width, height) {
-        const texture = this.textures.get(textureKey);
-        if (!texture || texture.has(frameKey)) return;
-
-        texture.add(frameKey, 0, x, y, width, height);
-    }
-
-    // =====================================
-    // ゴール生成
-    // =====================================
-    createGoal() {
-        if (!this.goalData) {
-            console.warn("[createGoal] ゴールデータがありません。生成をスキップします。");
-            return;
-        }
-
-        // タイル数からピクセル単位の幅と高さを計算
-        const pWidth = (this.goalData.width || 1) * this.TILE;
-        const pHeight = (this.goalData.height || 1) * this.TILE;
-
-        // 左上のピクセル座標を計算（お持ちの getPixelX/Y はマスの中心を返すため、ここでは直接計算します）
-        const startX = this.goalData.x * this.TILE;
-        const startY = this.goalData.y * this.TILE;
-
-        // PhaserのZoneは「中心座標」を基準に生成するため、範囲の中心点を計算
-        const centerX = startX + pWidth / 2;
-        const centerY = startY + pHeight / 2;
-
-        // ① 画面に描画されない「Zone」オブジェクトを作成
-        this.goalZone = this.add.zone(centerX, centerY, pWidth, pHeight);
-
-        // ② 静的（static）な物理ボディを有効化して、重なり判定を可能にする（第2引数をtrueにするとstaticになります）
-        this.physics.add.existing(this.goalZone, true);
-
-        console.log(`[createGoal] 不可視のゴール範囲を配置しました。中心: (${centerX}, ${centerY}), サイズ: ${pWidth}x${pHeight}`);
-    }
-
-    // =====================================
-    // Collider設定
-    // =====================================
-    setupCollisions() {
-        console.log("[setupCollisions] 当たり判定（コライダー・オーバーラップ）を設定します。");
-        this.physics.add.collider(this.player, this.grounds);
-        this.physics.add.collider(this.enemies, this.grounds);
-
-        this.physics.add.collider(this.banes, this.grounds);
-
-        // プレイヤーと敵の重なり（踏みつけ・被ダメージ）判定
-        this.physics.add.overlap(
-            this.player,
-            
-            this.enemies,
-            
-            (player, enemy) => {
-                
-                // ★★★ ここを追加・修正 ★★★
-            // 相手がShimba（クラス名で判定）の場合は、踏みつけを無視して一発ダメージ
-            if (enemy.constructor.name === "Shimba") {
-                this.handlePlayerDamage(player, enemy);
-                return; 
-            }
-                if (player.body.velocity.y > 0 && player.body.bottom <= enemy.body.top + 15) {
-                    this.handleEnemyStomp(enemy, player);
-                } else {
-                    this.handlePlayerDamage(player, enemy);
-                }
-            },
-            null,
-            this
-        );
-        this.physics.add.overlap(
-            this.player,
-            this.traps,
-            (player, trap) => {
-
-                // Reihuuki
-                if (trap.activate) {
-                    trap.activate(player);
-                    
-
-                    // Cloud
-                    if (trap.onPlayerOverlap) {
-                        trap.onPlayerOverlap(player);
-                    }
-                }
-            }
-        );
-        this.physics.add.overlap(
-            this.player,
-            this.lasers,
-            this.handlePlayerDamage,
-            null,
-            this
-        );
-       this.physics.add.collider(
-            this.player,
-            this.blocks,
-            (player, block) => {
-                // プレイヤーの頭上(up)が、ブロックの底面(down)に触れたか判定
-                const isHitFromBelow = player.body.touching.up && block.body.touching.down;
-
-                if (isHitFromBelow && block.hit) {
-                    block.hit(player);
-                }
-            },
-            null,
-            this
-        );
-        this.physics.add.overlap(
-            this.player,
-            this.bullets,
-            this.handlePlayerDamage,
-            null,
-            this
-        );
-        if (this.goalZone) {
-        this.physics.add.overlap(
-            this.player,
-            this.goalZone,
-            () => {
-                // 重なったら次ステージへの遷移処理を呼ぶ
-                this.nextStage();
-            },
-            null,
-            this
-        );
-    }
-        this.physics.add.collider(
-        this.uenos,
-        this.yoshidas,
-        (ueno, yoshida) => {
-
-            yoshida.direction *= -1;
-
-            // めり込み防止
-            if (yoshida.direction === 1) {
-                yoshida.x += 4;
-            } else {
-                yoshida.x -= 4;
-            }
-        },
-        null,
-        this
-    );
-        this.physics.add.overlap(
-            this.player,
-                this.pipeWarps,
-
-                (player, pipe) => {
-            
-                // 下キー押下
-                if (!this.cursors.down.isDown) {
-                    return;
-                    }
-            
-                this.enterPipe(pipe.warpData);
-            },
-        
-            null,
-            this
-        );
-    
-        this.physics.add.collider(
-            this.player,
-            this.banes,
-            (player, bane) => {
-
-             // 上から踏んだ時だけ
-            if (this.player.body.velocity.y > 0) {
-                if(bane.bounce){
-                    bane.bounce(player);
-                }
-            }
-
-        }
-    );
-
-        this.physics.add.collider(
-            this.player,
-            this.traps,
-            (player, trap) => {
-
-                // 下から叩いたか
-                const isHitFromBelow = player.body.touching.up && trap.body.touching.down;
-
-                if (isHitFromBelow && trap.hit) {
-                    trap.hit(player);
-                }
-            },
-            null,
-            this
-        );
-        this.physics.add.overlap(
-            this.player,
-            this.clouds,
-            (player, cloud) => {
-
-                if (cloud.onPlayerOverlap) {
-                    cloud.onPlayerOverlap(player);
-                }
-            },
-            null,
-            this
-        );
-
-        // ダメージ判定 (Trap)
-        // Reihuuki
-        this.physics.add.overlap(
-            this.player,
-            this.traps,
-            (player, trap) => {
-            
-                if (trap.activate) {
-                    trap.activate(player);
-                }
-            }
-        );
-
-        this.physics.add.overlap(
-
-    this.player,
-
-    this.blocks,
-
-        (player, block) => {
-
-        if (!block.hidden) {
-            return;
-        }
-
-        const bodyP = player.body;
-        const bodyB = block.body;
-
-        // 下からぶつかった瞬間だけ
-        const hitFromBelow =
-            bodyP.velocity.y < 0 &&
-            bodyP.touching.up &&
-            bodyB.touching.down;
-
-        if (hitFromBelow && block.hit) {
-            block.hit(player);
-        }
-    }
-);
-
-        
-    }
-
-    // =====================================
-    // Player死亡監視
-    // =====================================
-    setupPlayerDeathListener() {
-        
-        this.player.on("late", () => {
-            console.log("[Event] プレイヤー死亡イベントを受け取りました。");
-            this.gameOver();
-        });
-    }
-
-    // =====================================
-    // 敵を踏みつけたときの処理
-    // =====================================
-    handleEnemyStomp(enemy, player) {
-        console.log("[Combat] 敵を踏みつけました。");
-        this.enemyDownSound.play();
-
-        player.setVelocityY(-300);
-
-        if (enemy.die) {
-            enemy.die();
-        } else {
-            enemy.destroy();
-        }
-    }
-
-    // =====================================
-    // ダメージ処理
-    // =====================================
-    handlePlayerDamage(player, damageSource) {
-        if (!damageSource.getDamage) return;
-        const damage = damageSource.getDamage();
-        
-        console.log(`[Combat] プレイヤーがダメージを受けます。ソース: ${damageSource.constructor.name}, ダメージ量: ${damage}`);
-        player.takeDamage(damage);
-    }
-
-
-        enterPipe(warpData) {
-            // 多重防止
-        if (this.isWarping) {
-          return;
-        }
-        this.isWarping = true;
-
-        // 操作停止
-        this.player.canMove = false;
-
-        // ★重要: 物理演算（重力や地面との衝突）を一時的に無効化
-        // これを行わないと、Tweenによる沈み込みと地面の当たり判定がケンカしてしまいます
-        this.player.body.enable = false;
-        this.player.setVelocity(0, 0);
-
-        // 土管に沈む演出
-        this.tweens.add({
-          targets: this.player,
-          y: this.player.y + this.TILE+30, // 土管1マス分しっかり沈める
-          duration: 400,
-          onComplete: () => {
-            // 左上へ移動
-            const newX = this.getPixelX(warpData.exitX);
-            const newY = this.getPixelY(warpData.exitY);
-
-            this.player.setPosition(newX, newY);
-
-            // ★重要: 移動先で物理演算を再有効化し、落下を開始させる
-            this.player.body.enable = true;
-            this.player.setVelocity(0, 0); // 落下前の速度をリセット
-
-            // 少し待って操作復帰
-            this.time.delayedCall(500, () => {
-              this.player.canMove = true;
-              this.isWarping = false; // ★途切れていたワープ状態の解除フラグを追加
-            });
-          }
-        });
-    } 
-
-    // =====================================
-    // ゲームオーバー
-    // =====================================
-    gameOver() {
-
-        // 二重実行防止
-        if (this.isGameOver) {
-            return;
-        }
-        this.sound.stopAll();
-
-        this.gameoverSound.play({
-            loop:false,
-            volume:0.8
-        })
-
-        this.isGameOver = true;
-
-        console.log("[SceneTransition] ゲームオーバー演出開始");
-
-        // =========================
-        // ヒットストップ
-        // =========================
-
-        this.physics.pause();
-
-        // 敵停止
-        this.enemies.getChildren().forEach(enemy => {
-            if (enemy.anims) {
-                enemy.anims.pause();
-            }
-        });
-
-        // プレイヤー停止
-        this.player.setVelocity(0, 0);
-
-        // =========================
-        // 画面シェイク
-        // =========================
-
-        this.cameras.main.shake(
-            300,   // 時間
-            0.03   // 強さ
-        );
-
-        // =========================
-        // 少し止める
-        // =========================
-
-        this.time.delayedCall(1000, () => {
-
-            // =========================
-            // 再開
-            // =========================
-
-            this.physics.resume();
-
-            this.physics.world.timeScale = 2;
-
-            // =========================
-            // プレイヤー死亡演出
-            // =========================
-
-            this.player.body.enable = false;
-
-            this.player.setVelocity(
-                150,
-                -400
-            );
-
-            this.player.setAngularVelocity(600);
-
-            this.player.setGravityY(1200);
-
-            // =========================
-            // 少し待ってResultへ
-            // =========================
-
-             
-        console.log("[SceneTransition] プレイヤーがミスしました。");
- 
-        if (DataManager) {
-
-    // DataManager側に処理を集約
-    DataManager.resetPlayerData();
-
-    const remainPaidHolidays =
-        DataManager.getPaidHolidays();
-
-    console.log(
-        `[有給管理] 残り有給: ${remainPaidHolidays}日`
-    );
-
-    // ResultSceneへ
-    this.scene.start("ResultScene", {
-        paidHolidays: remainPaidHolidays,
-        stageNumber: this.stageNumber
-    });
-
-} else {
-
-    this.scene.start("ResultScene", {
-        paidHolidays: 0
-    });
-}
-
-        });
-    }
-
-    // =====================================
-    // 次ステージ / クリア判定
-    // =====================================
-    nextStage() {
-        this.sound.stopAll();
-        if (this._cleared) return;
-        this._cleared = true;
-
-        const nextStage = this.stageNumber + 1;
-
-        if (this.stageNumber === 3) {
-            this.physics.pause();
-            this.input.enabled = false;
-            this.scene.launch("StageClearTransitionScene", {
-                next: "OfficeScene"
-            });
-            return;
-        }
-        console.log(`[SceneTransition] ステージクリア！ 次のステージ: ${nextStage}`);
-
-        // もし全ステージクリア（例: 3ステージ目終了）なら ClearScene へ
-        if (nextStage > 3) {
-            console.log("[SceneTransition] 全ステージクリア。ClearSceneへ遷移します。");
-
-            // ここで ClearScene を呼び出す
-            this.scene.start("ClearScene", { clear: true }); 
-            return;
-        }
-        DataManager.setCurrentStage(nextStage);
-        this.scene.start("GameScene", { stageNumber: nextStage });
-    }
-
-    // =====================================
-    // update
-    // =====================================
-        update(time, delta) {
-            if (this.isGameOver) {
-                return; 
-            }
-            if (this.timer) {
-                this.timer.update();
-            }
-            
-
-        // =========================
-        // プレイヤー更新
-        // =========================
-
-        if (this.player && this.player.update) {
-            this.player.update(this.cursors);
-        }
-
-        // =========================
-        // 敵更新
-        // =========================
-
-        this.enemies.getChildren().forEach(enemy => {
-
-            if (enemy.update) {
-
-                // player と time を渡す
-                enemy.update(this.player, time);
-            }
-
-            // =========================
-            // 画面外削除
-            // =========================
-
-            if (
-                enemy.y > 2000 ||
-                enemy.y < -2000 ||
-                enemy.x < -2000 ||
-                enemy.x > 2000
-            ) {
-
-                console.log(
-                    `[CleanUp] 敵が画面外に出たため削除します。タイプ: ${enemy.constructor.name}`
-                );
-
-                this.enemies.remove(enemy, true, true);
-            }
-        });
-        const hasRowley =
-            this.enemies.getChildren().some(
-                enemy => enemy instanceof Rowley
-            );
-
-        if (hasRowley && time > this.enemySpawnTimer) {
-
-            this.enemySpawnTimer =
-            time + 4000;
-
-            this.spawnRandomEnemy();
-        }
-        this.bullets.getChildren().forEach(bullet => {
-            if (bullet.x < -2000 || bullet.x > 2000 || bullet.y < -2000 || bullet.y > 2000) {
-                console.log("[CleanUp] 弾が画面外に出たため削除します。");
-                this.bullets.remove(bullet, true, true);
-            }
-        });
-        
-        this.updateUI();
-    }
-        spawnGoalAndBlocks() {
-
-        console.log(
-            "[Event] 30秒経過！社員証（ゴール）がゆっくり降ってきます！"
-        );
-
-        const dropX = this.getPixelX(23);
-        const targetY = 370;
-        const startY = -100;
-
-        const syainsyo =
-            this.add.image(
-                dropX,
-                startY,
-                "syainsyo"
-            );
-
-        syainsyo.setDisplaySize(64, 64);
-        syainsyo.setDepth(1000);
-
-        this.tweens.add({
-            targets: syainsyo,
-            y: targetY,
-            duration: 4500,
-            ease: "Power2",
-
-            onComplete: () => {
-
-                console.log(
-                    "[Goal] 到着！取得判定を有効にします。"
-                );
-
-                this.physics.add.existing(
-                    syainsyo,
-                    true
-                );
-
-                this.physics.add.overlap(
-                    this.player,
-                    syainsyo,
-
-                    () => {
-
-                        if (this.isClearing) {
-                            return;
-                        }
-
-                        this.isClearing = true;
-
-                        syainsyo.destroy();
-
-                        this.nextStage();
-                    },
-
-                    null,
-                    this
-                );
-            }
-        });
-    }
+  }
 }
