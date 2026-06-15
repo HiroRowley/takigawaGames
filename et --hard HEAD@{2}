@@ -1,0 +1,49 @@
+[33mc2ac421[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mUeno/feature/trap[m[33m)[m HEAD@{0}: reset: moving to HEAD
+[33mc2ac421[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mUeno/feature/trap[m[33m)[m HEAD@{1}: commit (merge): Merge branch 'Enemy' of https://github.com/HiroRowley/takigawaGames into Ueno/feature/trap
+[33m00651d1[m[33m ([m[1;31morigin/Ueno/feature/trap[m[33m)[m HEAD@{2}: reset: moving to HEAD
+[33m00651d1[m[33m ([m[1;31morigin/Ueno/feature/trap[m[33m)[m HEAD@{3}: reset: moving to HEAD
+[33m00651d1[m[33m ([m[1;31morigin/Ueno/feature/trap[m[33m)[m HEAD@{4}: reset: moving to 00651d15
+[33m00651d1[m[33m ([m[1;31morigin/Ueno/feature/trap[m[33m)[m HEAD@{5}: reset: moving to 00651d15bd984e2e84e5fd97f905b22e7d53c8f5
+[33m00651d1[m[33m ([m[1;31morigin/Ueno/feature/trap[m[33m)[m HEAD@{6}: checkout: moving from main to Ueno/feature/trap
+[33m2fc7042[m[33m ([m[1;32mmain[m[33m)[m HEAD@{7}: checkout: moving from Ueno/feature/trap to main
+[33m00651d1[m[33m ([m[1;31morigin/Ueno/feature/trap[m[33m)[m HEAD@{8}: commit: Trapの追加
+[33m407bcdd[m[33m ([m[1;31morigin/Ueno/feature/Movement[m[33m, [m[1;32mUeno/feature/Movement[m[33m)[m HEAD@{9}: checkout: moving from Ueno/feature/Movement to Ueno/feature/trap
+[33m407bcdd[m[33m ([m[1;31morigin/Ueno/feature/Movement[m[33m, [m[1;32mUeno/feature/Movement[m[33m)[m HEAD@{10}: commit: items/Isu.jsの追加
+[33mdbb0ca3[m HEAD@{11}: commit: TrapBase.jsと子クラスファイル追加
+[33m014d1ce[m HEAD@{12}: merge main: Merge made by the 'ort' strategy.
+[33mf4d6b51[m HEAD@{13}: checkout: moving from Ueno/feature/Movement to Ueno/feature/Movement
+[33mf4d6b51[m HEAD@{14}: commit: PlayerMovement.jsとEnemyMovement.jsの追加
+[33m31a674d[m[33m ([m[1;31morigin/UenoBranch[m[33m, [m[1;32mUenoBranch[m[33m)[m HEAD@{15}: checkout: moving from UenoBranch to Ueno/feature/Movement
+[33m31a674d[m[33m ([m[1;31morigin/UenoBranch[m[33m, [m[1;32mUenoBranch[m[33m)[m HEAD@{16}: commit: GameSceneの更新
+[33mbce55f5[m HEAD@{17}: commit: GameSceneの更新
+[33me75ba01[m HEAD@{18}: commit: GameSceneの更新
+[33mb23b25c[m HEAD@{19}: commit: GameSceneの更新
+[33mea1e491[m HEAD@{20}: pull origin UenoBranch: Merge made by the 'ort' strategy.
+[33mb9de551[m HEAD@{21}: commit: GameSceneの修正
+[33m84556f7[m HEAD@{22}: checkout: moving from main to UenoBranch
+[33m2fc7042[m[33m ([m[1;32mmain[m[33m)[m HEAD@{23}: commit (merge): コンフリクト解消
+[33m9332725[m HEAD@{24}: checkout: moving from UenoBranch to main
+[33m84556f7[m HEAD@{25}: commit: create()の更新
+[33ma3a7b51[m HEAD@{26}: checkout: moving from main to UenoBranch
+[33m9332725[m HEAD@{27}: reset: moving to HEAD
+[33m9332725[m HEAD@{28}: checkout: moving from UenoBranch to main
+[33ma3a7b51[m HEAD@{29}: checkout: moving from main to UenoBranch
+[33m9332725[m HEAD@{30}: checkout: moving from UenoBranch to main
+[33ma3a7b51[m HEAD@{31}: checkout: moving from main to UenoBranch
+[33m9332725[m HEAD@{32}: checkout: moving from UenoBranch to main
+[33ma3a7b51[m HEAD@{33}: reset: moving to HEAD
+[33ma3a7b51[m HEAD@{34}: checkout: moving from main to UenoBranch
+[33m9332725[m HEAD@{35}: commit: add lock file
+[33m6508300[m HEAD@{36}: checkout: moving from UenoBranch to main
+[33ma3a7b51[m HEAD@{37}: commit: package-lock.json更新
+[33md5b705f[m HEAD@{38}: commit: 06/02 15:49scenes
+[33m1500f62[m HEAD@{39}: commit: 修正版scenes
+[33me332fa5[m HEAD@{40}: checkout: moving from main to UenoBranch
+[33m6508300[m HEAD@{41}: checkout: moving from UenoBranch to main
+[33me332fa5[m HEAD@{42}: commit: Sceneコメント追加
+[33m0e26cb0[m HEAD@{43}: Branch: renamed refs/heads/ueno to refs/heads/UenoBranch
+[33m0e26cb0[m HEAD@{45}: commit: Scene追加
+[33m6508300[m HEAD@{46}: checkout: moving from main to ueno
+[33m6508300[m HEAD@{47}: checkout: moving from ueno to main
+[33m6508300[m HEAD@{48}: checkout: moving from main to ueno
+[33m6508300[m HEAD@{49}: clone: from https://github.com/HiroRowley/takigawaGames.git

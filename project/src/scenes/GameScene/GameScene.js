@@ -1,26 +1,26 @@
 import Phaser from "phaser";
-import DataManager from "../../managers/DataManager.js";
+import DataManager from "../managers/DataManager.js";
 
 // ステージデータのインポート
-import Stage1 from "../../stages/Stage1.js";
-import Stage2 from "../../stages/Stage2.js";
-import Stage3 from "../../stages/Stage3.js";
-import SampleStage from "../../stages/SampleStage.js"
+import Stage1 from "../stages/Stage1.js";
+import Stage2 from "../stages/Stage2.js";
+import Stage3 from "../stages/Stage3.js";
+import SampleStage from "../stages/SampleStage.js"
 
-import Player from "../../objects/Player.js";
-import Enemy from "../../objects/enemy/EnemyBase.js";
-import Trap from "../../objects/traps/TrapBase.js";
-import Noda from "../../objects/enemy/Noda.js";
-import Yoshida from "../../objects/enemy/Yoshida.js";
-import Shimba from "../../objects/enemy/Shimba.js";
-import Rowley from "../../objects/enemy/Rowley.js";
-import ItemBlock from "../../objects/traps/itemBlock.js";
-import Ueno from "../../objects/enemy/Ueno.js";
+import Player from "../objects/Player.js";
+import Enemy from "../objects/enemy/EnemyBase.js";
+import Trap from "../objects/traps/TrapBase.js";
+import Noda from "../objects/enemy/Noda.js";
+import Yoshida from "../objects/enemy/Yoshida.js";
+import Shimba from "../objects/enemy/Shimba.js";
+import Rowley from "../objects/enemy/Rowley.js";
+import ItemBlock from "../objects/traps/itemBlock.js";
+import Ueno from "../objects/enemy/Ueno.js";
 
-import Reihuuki from "../../objects/traps/reihuuki.js";
-import Bane from "../../objects/traps/bane.js";
-import Timer from "../../timer/Timer.js";
-import Cloud from "../../objects/traps/cloud.js";
+import Reihuuki from "../objects/traps/reihuuki.js";
+import Bane from "../objects/traps/bane.js";
+import Timer from "../timer/Timer.js";
+import Cloud from "../objects/traps/cloud.js";
 
 export default class GameScene extends Phaser.Scene {
 
