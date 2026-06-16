@@ -1,6 +1,6 @@
 @echo off
 
-cd /d C:\Users\traininguser\Documents\takigawaGames\takigawaGames\project
+cd /d "%~dp0project"
 
 start http://localhost:5173
 
