@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import DataManager from "../../managers/DataManager.js"
 
 export default class EndingScene extends Phaser.Scene {
   constructor() {
@@ -41,6 +42,12 @@ export default class EndingScene extends Phaser.Scene {
       this.add
         .text(0, 650, "滝川 雅晴 さん\n\nテストプレイしてくれた26卒の皆様", emphasisStyle)
         .setOrigin(0.5),
+      this.add.text(
+        0,
+        1000,
+        `滝川さん総欠勤数:${Math.min(DataManager.getPaidHolidays(), 0)}`,
+        normalStyle
+      ) 
     ]);
 
     this.tweens.add({
