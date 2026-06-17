@@ -25,6 +25,8 @@ export default class VideoScene extends Phaser.Scene {
     });
 
     video.play();
-    video.once("complete", () => this.scene.start("TitleScene"));
+    video.once("complete", () => {window.location.reload();
+      
+    });
   }
 }
