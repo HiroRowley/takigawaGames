@@ -196,12 +196,7 @@ const Stage1 = {
       type: "bane"
     },
 
-    {
-      x: 20,
-      y: 11,
-      type: "itemBlock",
-      itemType: "empty"
-    },
+    
     {
       x: 42.5,
       y: 7,
@@ -255,7 +250,7 @@ const Stage1 = {
     },
 
     {
-      x: 40.5,
+      x: 38,
       y: 7,
       type: "itemBlock",
       itemType: "jousisu"
