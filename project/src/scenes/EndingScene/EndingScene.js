@@ -10,6 +10,7 @@ export default class EndingScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor("#000000");
 
     const normalStyle = { fontSize: "24px", color: "#ffffff", align: "center" };
+    const lastStyle = { fontSize: "36px", color: "#ffffff", align: "center" };
     const titleStyle = {
       fontSize: "32px",
       color: "#aaaaaa",
@@ -46,7 +47,7 @@ export default class EndingScene extends Phaser.Scene {
         0,
         1000,
         `滝川さん総欠勤数:${Math.min(DataManager.getPaidHolidays(), 0)}`,
-        normalStyle
+        lastStyle
       ) 
     ]);
 

@@ -58,7 +58,7 @@ class DataManager {
 
   setHP(value) {
     
-    this.hp = Math.max(0, value);
+    this.hp = 4//Math.max(0, value);
   }
 
   // =========================================================

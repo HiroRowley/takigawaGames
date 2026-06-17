@@ -21,7 +21,8 @@ export default class OfficeScene extends Phaser.Scene {
     const goalX = this.scale.width - 160;
 
     this.goal = this.physics.add.staticImage(goalX, centerY, "checkIn");
-    this.goal.setDisplaySize(80, 80);
+    this.goal.setDisplaySize(160, 160);
+    this.goal.setBodySize(0.5);
 
     this.player = this.physics.add.sprite(100, centerY, "endingTakigawa");
     this.player.setDisplaySize(90, 140);
