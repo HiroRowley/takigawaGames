@@ -12,7 +12,7 @@ export default class Timer {
  
         // ⭐ 共通位置（ここだけ変えれば全部動く）
         this.baseX = width / 2;
-        this.baseY = 120;
+        this.baseY = 100;
  
         // 🟡 開始メッセージ（同じ位置）
         this.startText = this.scene.add.text(
@@ -23,7 +23,7 @@ export default class Timer {
                 fontSize: "40px",
                 color: "#ffffff",
                 backgroundColor: "rgba(0,0,0,0.6)",
-                padding: { x: 16, y: 10 }
+                padding: { x: 16, y: 9 }
             }
         ).setOrigin(0.5);
  
