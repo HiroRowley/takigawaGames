@@ -196,12 +196,12 @@ const Stage1 = {
       type: "bane"
     },
 
-    {
+    /*{
       x: 20,
       y: 11,
       type: "itemBlock",
       itemType: "empty"
-    },
+    },*/
     {
       x: 42.5,
       y: 7,
