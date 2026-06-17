@@ -250,7 +250,7 @@ const Stage1 = {
     },
 
     {
-      x: 38,
+      x: 38.5,
       y: 7,
       type: "itemBlock",
       itemType: "jousisu"
