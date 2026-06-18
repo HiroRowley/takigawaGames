@@ -49,7 +49,7 @@ export default class TitleScene extends Phaser.Scene {
         // =========================
 
         let worstScoreText =
-            "歴代総欠勤数 : 0";
+            "最大欠勤数 : 0";
 
         try {
 
