@@ -44,19 +44,10 @@ export default class VideoScene extends Phaser.Scene {
         });
 
         video.play();
-
-        // =========================
-        // 動画終了
-        // =========================
-
-        video.once(
-            "complete",
-            async () => {
-
-                try {
+        try {
 
                     // 欠勤回数送信
-                    await saveScore(
+                    saveScore(
                         DataManager.getPaidHolidays()
                     );
 
@@ -72,6 +63,14 @@ export default class VideoScene extends Phaser.Scene {
                     );
                 }
 
+
+        // =========================
+        // 動画終了
+        // =========================
+
+        video.once(
+            "complete",
+             () => {
                 // リロード
                 window.location.reload();
             }
