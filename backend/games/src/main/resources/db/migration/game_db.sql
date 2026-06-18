@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS scores (
+    id BIGSERIAL PRIMARY KEY,
+    score INTEGER NOT NULL
+);
+
+INSERT INTO scores (id, score)
+VALUES (1, -1)
+ON CONFLICT (id) DO NOTHING;
