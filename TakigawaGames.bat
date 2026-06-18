@@ -25,3 +25,13 @@ REM =====================================
 
 start http://localhost:5173
 
+timeout /t 5 > nul
+
+echo Set ws = CreateObject("WScript.Shell") > fullscreen.vbs
+echo ws.AppActivate "Chrome" >> fullscreen.vbs
+echo WScript.Sleep 1000 >> fullscreen.vbs
+echo ws.SendKeys "{F11}" >> fullscreen.vbs
+
+cscript //nologo fullscreen.vbs
+del fullscreen.vbs
+
