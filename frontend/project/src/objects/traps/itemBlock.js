@@ -241,7 +241,7 @@ export default class ItemBlock extends TrapBase {
 
             boss.setDepth(1001);
 
-            boss.setScale(0.5);
+            boss.setScale(0.3);
 
             boss.body.setAllowGravity(false);
 

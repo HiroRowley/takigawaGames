@@ -2,9 +2,9 @@
 
 ## 必要なもの
 
-* PostgreSQL
-* Java
-* Node.js
+* PostgreSQL 16.13
+* Java 17
+* Node.js 24.15
 
 ---
 
