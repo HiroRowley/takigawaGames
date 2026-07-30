@@ -1,15 +1,15 @@
-
 // =========================
 // 最悪記録取得
 // =========================
 
 export async function getWorstScore() {
+    const response = await fetch("/api/scores/worst");
 
-    const response = await fetch(
-        "http://localhost:8080/scores/worst"
-    );
+    if (!response.ok) {
+        throw new Error(`最悪記録の取得に失敗しました: ${response.status}`);
+    }
 
-    return await response.json();
+    return response.json();
 }
 
 // =========================
@@ -17,21 +17,21 @@ export async function getWorstScore() {
 // =========================
 
 export async function saveScore(score) {
+    const response = await fetch("/api/scores", {
+        method: "POST",
 
-    const response = await fetch(
-        "http://localhost:8080/scores",
-        {
-            method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
 
-            headers: {
-                "Content-Type": "application/json"
-            },
+        body: JSON.stringify({
+            score
+        })
+    });
 
-            body: JSON.stringify({
-                score: score
-            })
-        }
-    );
+    if (!response.ok) {
+        throw new Error(`スコアの保存に失敗しました: ${response.status}`);
+    }
 
-    return await response.json();
+    return response.json();
 }
