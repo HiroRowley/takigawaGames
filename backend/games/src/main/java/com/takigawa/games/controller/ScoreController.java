@@ -10,7 +10,7 @@ import com.takigawa.games.service.*;
 
 @RestController
 @RequestMapping("/scores")
-@CrossOrigin
+
 public class ScoreController {
 
     @Autowired
