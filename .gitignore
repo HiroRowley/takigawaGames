@@ -1,17 +1,52 @@
-# node_modules
-node_modules/
-frontend/project/node_modules/
+# =========================
+# Node.js / Vite
+# =========================
 
-# vite cache
-.vite/
+**/node_modules/
+**/.vite/
+**/dist/
 
-# build files
-dist/
-build/
 
-# environment
-.env
+# =========================
+# Java / Maven / Gradle
+# =========================
 
+**/target/
+**/build/
+
+
+# =========================
+# Environment variables
+# =========================
+
+**/.env
+**/.env.*
+!**/.env.example
+
+
+# =========================
+# Logs
+# =========================
+
+*.log
+logs/
+
+
+# =========================
+# IDE
+# =========================
+
+.vscode/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+
+# =========================
 # OS
+# =========================
+
 .DS_Store
 Thumbs.db
